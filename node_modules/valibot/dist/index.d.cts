@@ -1,0 +1,5885 @@
+/**
+ * Issue reason type.
+ */
+type IssueReason = 'any' | 'array' | 'bigint' | 'blob' | 'boolean' | 'date' | 'intersect' | 'function' | 'instance' | 'map' | 'number' | 'object' | 'record' | 'set' | 'special' | 'string' | 'symbol' | 'tuple' | 'undefined' | 'union' | 'unknown' | 'variant' | 'type';
+/**
+ * Issue origin type.
+ */
+type IssueOrigin = 'key' | 'value';
+/**
+ * Unknown path item type.
+ */
+type UnknownPathItem = {
+    type: 'unknown';
+    input: unknown;
+    key: unknown;
+    value: unknown;
+};
+/**
+ * Path item type.
+ */
+type PathItem = ArrayPathItem | MapPathItem | ObjectPathItem | RecordPathItem | SetPathItem | TuplePathItem | UnknownPathItem;
+/**
+ * Issue type.
+ */
+type Issue = {
+    /**
+     * The issue reason.
+     */
+    reason: IssueReason;
+    /**
+     * The validation name.
+     */
+    validation: string;
+    /**
+     * The issue origin.
+     */
+    origin: IssueOrigin;
+    /**
+     * The error message.
+     */
+    message: string;
+    /**
+     * The input data.
+     */
+    input: unknown;
+    /**
+     * The validation requirement
+     */
+    requirement?: unknown;
+    /**
+     * The issue path.
+     */
+    path?: PathItem[];
+    /**
+     * The sub issues.
+     */
+    issues?: Issues;
+    /**
+     * Whether it was abort early.
+     */
+    abortEarly?: boolean;
+    /**
+     * Whether the pipe was abort early.
+     */
+    abortPipeEarly?: boolean;
+    /**
+     * Whether the pipe was skipped.
+     */
+    skipPipe?: boolean;
+};
+/**
+ * Issues type.
+ */
+type Issues = [Issue, ...Issue[]];
+
+/**
+ * Error message type.
+ */
+type ErrorMessage = string | (() => string);
+/**
+ * Maybe readonly type.
+ */
+type MaybeReadonly<T> = Readonly<T> | T;
+/**
+ * Resolve type.
+ *
+ * Hint: This type has no effect and is only used so that TypeScript displays
+ * the final type in the preview instead of the utility types used.
+ */
+type Resolve<T> = T;
+/**
+ * Resolve object type.
+ *
+ * Hint: This type has no effect and is only used so that TypeScript displays
+ * the final type in the preview instead of the utility types used.
+ */
+type ResolveObject<T> = Resolve<{
+    [k in keyof T]: T[k];
+}>;
+
+/**
+ * Parse info type.
+ */
+type ParseInfo = Partial<Pick<Issue, 'origin' | 'abortEarly' | 'abortPipeEarly' | 'skipPipe'>>;
+/**
+ * Typed schema result type.
+ */
+type TypedSchemaResult<TOutput> = {
+    /**
+     * Whether is's typed.
+     */
+    typed: true;
+    /**
+     * The parse output.
+     */
+    output: TOutput;
+    /**
+     * The parse issues.
+     */
+    issues?: Issues;
+};
+/**
+ * Untyped parse result type.
+ */
+type UntypedSchemaResult = {
+    /**
+     * Whether is's typed.
+     */
+    typed: false;
+    /**
+     * The parse output.
+     */
+    output: unknown;
+    /**
+     * The parse issues.
+     */
+    issues: Issues;
+};
+/**
+ * Schema result type.
+ */
+type SchemaResult<TOutput> = TypedSchemaResult<TOutput> | UntypedSchemaResult;
+/**
+ * Base schema type.
+ */
+type BaseSchema<TInput = any, TOutput = TInput> = {
+    /**
+     * Whether it's async.
+     */
+    async: false;
+    /**
+     * Parses unknown input based on its schema.
+     *
+     * @param input The input to be parsed.
+     * @param info The parse info.
+     *
+     * @returns The parse result.
+     *
+     * @internal
+     */
+    _parse(input: unknown, info?: ParseInfo): SchemaResult<TOutput>;
+    /**
+     * Input and output type.
+     *
+     * @internal
+     */
+    _types?: {
+        input: TInput;
+        output: TOutput;
+    };
+};
+/**
+ * Base schema async type.
+ */
+type BaseSchemaAsync<TInput = any, TOutput = TInput> = {
+    /**
+     * Whether it's async.
+     */
+    async: true;
+    /**
+     * Parses unknown input based on its schema.
+     *
+     * @param input The input to be parsed.
+     * @param info The parse info.
+     *
+     * @returns The parse result.
+     *
+     * @internal
+     */
+    _parse(input: unknown, info?: ParseInfo): Promise<SchemaResult<TOutput>>;
+    /**
+     * Input and output type.
+     *
+     * @internal
+     */
+    _types?: {
+        input: TInput;
+        output: TOutput;
+    };
+};
+/**
+ * Input inference type.
+ */
+type Input<TSchema extends BaseSchema | BaseSchemaAsync> = NonNullable<TSchema['_types']>['input'];
+/**
+ * Output inference type.
+ */
+type Output<TSchema extends BaseSchema | BaseSchemaAsync> = NonNullable<TSchema['_types']>['output'];
+
+/**
+ * Pipe info type.
+ */
+type PipeInfo = ParseInfo & Pick<Issue, 'reason'>;
+/**
+ * Valid action result type.
+ */
+type ValidActionResult<TOutput> = {
+    /**
+     * The pipe output.
+     */
+    output: TOutput;
+    /**
+     * The pipe issues.
+     */
+    issues?: undefined;
+};
+/**
+ * Invalid action result type.
+ */
+type InvalidActionResult = {
+    /**
+     * The pipe output.
+     */
+    output?: undefined;
+    /**
+     * The pipe issues.
+     */
+    issues: Pick<Issue, 'validation' | 'message' | 'input' | 'requirement' | 'path'>[];
+};
+/**
+ * Pipe action result type.
+ */
+type PipeActionResult<TOutput> = ValidActionResult<TOutput> | InvalidActionResult;
+/**
+ * Base validation type.
+ */
+type BaseValidation<TInput = any> = {
+    /**
+     * Whether it's async.
+     */
+    async: false;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * Parses unknown input based on its requirement.
+     *
+     * @param input The input to be parsed.
+     *
+     * @returns The parse result.
+     *
+     * @internal
+     */
+    _parse(input: TInput): PipeActionResult<TInput>;
+};
+/**
+ * Base validation async type.
+ */
+type BaseValidationAsync<TInput = any> = {
+    /**
+     * Whether it's async.
+     */
+    async: true;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * Parses unknown input based on its requirement.
+     *
+     * @param input The input to be parsed.
+     *
+     * @returns The parse result.
+     *
+     * @internal
+     */
+    _parse(input: TInput): Promise<PipeActionResult<TInput>>;
+};
+/**
+ * Base transformation type.
+ */
+type BaseTransformation<TInput = any> = {
+    /**
+     * Whether it's async.
+     */
+    async: false;
+    /**
+     * Parses unknown input based on its requirement.
+     *
+     * @param input The input to be parsed.
+     *
+     * @returns The parse result.
+     *
+     * @internal
+     */
+    _parse(input: TInput): PipeActionResult<TInput>;
+};
+/**
+ * Base transformation async type.
+ */
+type BaseTransformationAsync<TInput = any> = {
+    /**
+     * Whether it's async.
+     */
+    async: true;
+    /**
+     * Parses unknown input based on its requirement.
+     *
+     * @param input The input to be parsed.
+     *
+     * @returns The parse result.
+     *
+     * @internal
+     */
+    _parse(input: TInput): Promise<PipeActionResult<TInput>>;
+};
+/**
+ * Pipe type.
+ */
+type Pipe<TInput> = (BaseValidation<TInput> | BaseTransformation<TInput>)[];
+/**
+ * Pipe async type.
+ */
+type PipeAsync<TInput> = (BaseValidation<TInput> | BaseValidationAsync<TInput> | BaseTransformation<TInput> | BaseTransformationAsync<TInput>)[];
+
+/**
+ * Any schema type.
+ */
+type AnySchema<TOutput = any> = BaseSchema<any, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'any';
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<any> | undefined;
+};
+/**
+ * Creates an any schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An any schema.
+ */
+declare function any(pipe?: Pipe<any>): AnySchema;
+
+/**
+ * Any schema type.
+ */
+type AnySchemaAsync<TOutput = any> = BaseSchemaAsync<any, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'any';
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<any> | undefined;
+};
+/**
+ * Creates an async any schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async any schema.
+ */
+declare function anyAsync(pipe?: PipeAsync<any>): AnySchemaAsync;
+
+/**
+ * Array schema type.
+ */
+type ArraySchema<TItem extends BaseSchema, TOutput = Output<TItem>[]> = BaseSchema<Input<TItem>[], TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'array';
+    /**
+     * The array item schema.
+     */
+    item: TItem;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<Output<TItem>[]> | undefined;
+};
+/**
+ * Creates a array schema.
+ *
+ * @param item The item schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A array schema.
+ */
+declare function array<TItem extends BaseSchema>(item: TItem, pipe?: Pipe<Output<TItem>[]>): ArraySchema<TItem>;
+/**
+ * Creates a array schema.
+ *
+ * @param item The item schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A array schema.
+ */
+declare function array<TItem extends BaseSchema>(item: TItem, message?: ErrorMessage, pipe?: Pipe<Output<TItem>[]>): ArraySchema<TItem>;
+
+/**
+ * Array schema async type.
+ */
+type ArraySchemaAsync<TItem extends BaseSchema | BaseSchemaAsync, TOutput = Output<TItem>[]> = BaseSchemaAsync<Input<TItem>[], TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'array';
+    /**
+     * The array item schema.
+     */
+    item: TItem;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<Output<TItem>[]> | undefined;
+};
+/**
+ * Creates an async array schema.
+ *
+ * @param item The item schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async array schema.
+ */
+declare function arrayAsync<TItem extends BaseSchema | BaseSchemaAsync>(item: TItem, pipe?: PipeAsync<Output<TItem>[]>): ArraySchemaAsync<TItem>;
+/**
+ * Creates an async array schema.
+ *
+ * @param item The item schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async array schema.
+ */
+declare function arrayAsync<TItem extends BaseSchema | BaseSchemaAsync>(item: TItem, message?: ErrorMessage, pipe?: PipeAsync<Output<TItem>[]>): ArraySchemaAsync<TItem>;
+
+/**
+ * Array path item type.
+ */
+type ArrayPathItem = {
+    type: 'array';
+    input: unknown[];
+    key: number;
+    value: unknown;
+};
+
+/**
+ * Bigint schema type.
+ */
+type BigintSchema<TOutput = bigint> = BaseSchema<bigint, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'bigint';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<bigint> | undefined;
+};
+/**
+ * Creates a bigint schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A bigint schema.
+ */
+declare function bigint(pipe?: Pipe<bigint>): BigintSchema;
+/**
+ * Creates a bigint schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A bigint schema.
+ */
+declare function bigint(message?: ErrorMessage, pipe?: Pipe<bigint>): BigintSchema;
+
+/**
+ * Bigint schema async type.
+ */
+type BigintSchemaAsync<TOutput = bigint> = BaseSchemaAsync<bigint, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'bigint';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<bigint> | undefined;
+};
+/**
+ * Creates an async bigint schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async bigint schema.
+ */
+declare function bigintAsync(pipe?: PipeAsync<bigint>): BigintSchemaAsync;
+/**
+ * Creates an async bigint schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async bigint schema.
+ */
+declare function bigintAsync(message?: ErrorMessage, pipe?: PipeAsync<bigint>): BigintSchemaAsync;
+
+/**
+ * Blob schema type.
+ */
+type BlobSchema<TOutput = Blob> = BaseSchema<Blob, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'blob';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<Blob> | undefined;
+};
+/**
+ * Creates a blob schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A blob schema.
+ */
+declare function blob(pipe?: Pipe<Blob>): BlobSchema;
+/**
+ * Creates a blob schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A blob schema.
+ */
+declare function blob(message?: ErrorMessage, pipe?: Pipe<Blob>): BlobSchema;
+
+/**
+ * Blob schema async type.
+ */
+type BlobSchemaAsync<TOutput = Blob> = BaseSchemaAsync<Blob, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'blob';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<Blob> | undefined;
+};
+/**
+ * Creates an async blob schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async blob schema.
+ */
+declare function blobAsync(pipe?: PipeAsync<Blob>): BlobSchemaAsync;
+/**
+ * Creates an async blob schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async blob schema.
+ */
+declare function blobAsync(message?: ErrorMessage, pipe?: PipeAsync<Blob>): BlobSchemaAsync;
+
+/**
+ * Boolean schema type.
+ */
+type BooleanSchema<TOutput = boolean> = BaseSchema<boolean, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'boolean';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<boolean> | undefined;
+};
+/**
+ * Creates a boolean schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A boolean schema.
+ */
+declare function boolean(pipe?: Pipe<boolean>): BooleanSchema;
+/**
+ * Creates a boolean schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A boolean schema.
+ */
+declare function boolean(message?: ErrorMessage, pipe?: Pipe<boolean>): BooleanSchema;
+
+/**
+ * Boolean schema async type.
+ */
+type BooleanSchemaAsync<TOutput = boolean> = BaseSchemaAsync<boolean, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'boolean';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<boolean> | undefined;
+};
+/**
+ * Creates an async boolean schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async boolean schema.
+ */
+declare function booleanAsync(pipe?: PipeAsync<boolean>): BooleanSchemaAsync;
+/**
+ * Creates an async boolean schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async boolean schema.
+ */
+declare function booleanAsync(message?: ErrorMessage, pipe?: PipeAsync<boolean>): BooleanSchemaAsync;
+
+/**
+ * Date schema type.
+ */
+type DateSchema<TOutput = Date> = BaseSchema<Date, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'date';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<Date> | undefined;
+};
+/**
+ * Creates a date schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A date schema.
+ */
+declare function date(pipe?: Pipe<Date>): DateSchema;
+/**
+ * Creates a date schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A date schema.
+ */
+declare function date(message?: ErrorMessage, pipe?: Pipe<Date>): DateSchema;
+
+/**
+ * Date schema async type.
+ */
+type DateSchemaAsync<TOutput = Date> = BaseSchemaAsync<Date, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'date';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<Date> | undefined;
+};
+/**
+ * Creates an async date schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async date schema.
+ */
+declare function dateAsync(pipe?: PipeAsync<Date>): DateSchemaAsync;
+/**
+ * Creates an async date schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async date schema.
+ */
+declare function dateAsync(message?: ErrorMessage, pipe?: PipeAsync<Date>): DateSchemaAsync;
+
+/**
+ * Enum type.
+ */
+type Enum = {
+    [key: string]: string | number;
+    [key: number]: string;
+};
+/**
+ * Native enum schema type.
+ */
+type EnumSchema<TEnum extends Enum, TOutput = TEnum[keyof TEnum]> = BaseSchema<TEnum[keyof TEnum], TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'enum';
+    /**
+     * The enum value.
+     */
+    enum: TEnum;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an enum schema.
+ *
+ * @param enum_ The enum value.
+ * @param message The error message.
+ *
+ * @returns An enum schema.
+ */
+declare function enum_<TEnum extends Enum>(enum_: TEnum, message?: ErrorMessage): EnumSchema<TEnum>;
+/**
+ * See {@link enum_}
+ *
+ * @deprecated Use `enum_` instead.
+ */
+declare const nativeEnum: typeof enum_;
+
+/**
+ * Native enum schema async type.
+ */
+type EnumSchemaAsync<TEnum extends Enum, TOutput = TEnum[keyof TEnum]> = BaseSchemaAsync<TEnum[keyof TEnum], TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'enum';
+    /**
+     * The enum value.
+     */
+    enum: TEnum;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async enum schema.
+ *
+ * @param enum_ The enum value.
+ * @param message The error message.
+ *
+ * @returns An async enum schema.
+ */
+declare function enumAsync<TEnum extends Enum>(enum_: TEnum, message?: ErrorMessage): EnumSchemaAsync<TEnum>;
+/**
+ * See {@link enumAsync}
+ *
+ * @deprecated Use `enumAsync` instead.
+ */
+declare const nativeEnumAsync: typeof enumAsync;
+
+/**
+ * Class enum type.
+ */
+type Class = abstract new (...args: any) => any;
+/**
+ * Instance schema type.
+ */
+type InstanceSchema<TClass extends Class, TOutput = InstanceType<TClass>> = BaseSchema<InstanceType<TClass>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'instance';
+    /**
+     * The class of the instance.
+     */
+    class: TClass;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<InstanceType<TClass>> | undefined;
+};
+/**
+ * Creates an instance schema.
+ *
+ * @param class_ The class of the instance.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An instance schema.
+ */
+declare function instance<TClass extends Class>(class_: TClass, pipe?: Pipe<InstanceType<TClass>>): InstanceSchema<TClass>;
+/**
+ * Creates an instance schema.
+ *
+ * @param class_ The class of the instance.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An instance schema.
+ */
+declare function instance<TClass extends Class>(class_: TClass, message?: ErrorMessage, pipe?: Pipe<InstanceType<TClass>>): InstanceSchema<TClass>;
+
+/**
+ * Instance schema type.
+ */
+type InstanceSchemaAsync<TClass extends Class, TOutput = InstanceType<TClass>> = BaseSchemaAsync<InstanceType<TClass>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'instance';
+    /**
+     * The class of the instance.
+     */
+    class: TClass;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<InstanceType<TClass>> | undefined;
+};
+/**
+ * Creates an async instance schema.
+ *
+ * @param class_ The class of the instance.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async instance schema.
+ */
+declare function instanceAsync<TClass extends Class>(class_: TClass, pipe?: PipeAsync<InstanceType<TClass>>): InstanceSchemaAsync<TClass>;
+/**
+ * Creates an async instance schema.
+ *
+ * @param class_ The class of the instance.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async instance schema.
+ */
+declare function instanceAsync<TClass extends Class>(class_: TClass, message?: ErrorMessage, pipe?: PipeAsync<InstanceType<TClass>>): InstanceSchemaAsync<TClass>;
+
+/**
+ * Intersect options async type.
+ */
+type IntersectOptionsAsync = MaybeReadonly<[
+    BaseSchema | BaseSchemaAsync,
+    BaseSchema | BaseSchemaAsync,
+    ...(BaseSchema[] | BaseSchemaAsync[])
+]>;
+
+/**
+ * Intersect input type.
+ */
+type IntersectInput<TIntersectOptions extends IntersectOptions | IntersectOptionsAsync> = TIntersectOptions extends [
+    BaseSchema<infer TInput1, any> | BaseSchemaAsync<infer TInput1, any>,
+    ...infer TRest
+] ? TRest extends IntersectOptions ? TInput1 & IntersectOutput<TRest> : TRest extends [
+    BaseSchema<infer TInput2, any> | BaseSchemaAsync<infer TInput2, any>
+] ? TInput1 & TInput2 : never : never;
+/**
+ * Intersect output type.
+ */
+type IntersectOutput<TIntersectOptions extends IntersectOptions | IntersectOptionsAsync> = TIntersectOptions extends [
+    BaseSchema<any, infer TOutput1> | BaseSchemaAsync<any, infer TOutput1>,
+    ...infer TRest
+] ? TRest extends IntersectOptions ? TOutput1 & IntersectOutput<TRest> : TRest extends [
+    BaseSchema<any, infer TOutput2> | BaseSchemaAsync<any, infer TOutput2>
+] ? TOutput1 & TOutput2 : never : never;
+
+/**
+ * Intersect options type.
+ */
+type IntersectOptions = MaybeReadonly<[
+    BaseSchema,
+    BaseSchema,
+    ...BaseSchema[]
+]>;
+/**
+ * Intersect schema type.
+ */
+type IntersectSchema<TOptions extends IntersectOptions, TOutput = IntersectOutput<TOptions>> = BaseSchema<IntersectInput<TOptions>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'intersect';
+    /**
+     * The intersect options.
+     */
+    options: TOptions;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<IntersectInput<TOptions>> | undefined;
+};
+/**
+ * Creates an intersect schema.
+ *
+ * @param options The intersect options.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An intersect schema.
+ */
+declare function intersect<TOptions extends IntersectOptions>(options: TOptions, pipe?: Pipe<IntersectInput<TOptions>>): IntersectSchema<TOptions>;
+/**
+ * Creates an intersect schema.
+ *
+ * @param options The intersect options.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An intersect schema.
+ */
+declare function intersect<TOptions extends IntersectOptions>(options: TOptions, message?: ErrorMessage, pipe?: Pipe<IntersectInput<TOptions>>): IntersectSchema<TOptions>;
+/**
+ * See {@link intersect}
+ *
+ * @deprecated Use `intersect` instead.
+ */
+declare const intersection: typeof intersect;
+
+/**
+ * Literal type.
+ */
+type Literal = number | string | boolean | symbol | bigint;
+
+/**
+ * Literal schema type.
+ */
+type LiteralSchema<TLiteral extends Literal, TOutput = TLiteral> = BaseSchema<TLiteral, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'literal';
+    /**
+     * The literal value.
+     */
+    literal: TLiteral;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates a literal schema.
+ *
+ * @param literal The literal value.
+ * @param message The error message.
+ *
+ * @returns A literal schema.
+ */
+declare function literal<TLiteral extends Literal>(literal: TLiteral, message?: ErrorMessage): LiteralSchema<TLiteral>;
+
+/**
+ * Literal schema async type.
+ */
+type LiteralSchemaAsync<TLiteral extends Literal, TOutput = TLiteral> = BaseSchemaAsync<TLiteral, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'literal';
+    /**
+     * The literal value.
+     */
+    literal: TLiteral;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async literal schema.
+ *
+ * @param literal The literal value.
+ * @param message The error message.
+ *
+ * @returns An async literal schema.
+ */
+declare function literalAsync<TLiteral extends Literal>(literal: TLiteral, message?: ErrorMessage): LiteralSchemaAsync<TLiteral>;
+
+/**
+ * Map path item type.
+ */
+type MapPathItem = {
+    type: 'map';
+    input: Map<unknown, unknown>;
+    key: unknown;
+    value: unknown;
+};
+/**
+ * Map input inference type.
+ */
+type MapInput<TKey extends BaseSchema | BaseSchemaAsync, TValue extends BaseSchema | BaseSchemaAsync> = Map<Input<TKey>, Input<TValue>>;
+/**
+ * Map output inference type.
+ */
+type MapOutput<TKey extends BaseSchema | BaseSchemaAsync, TValue extends BaseSchema | BaseSchemaAsync> = Map<Output<TKey>, Output<TValue>>;
+
+/**
+ * Map schema type.
+ */
+type MapSchema<TKey extends BaseSchema, TValue extends BaseSchema, TOutput = MapOutput<TKey, TValue>> = BaseSchema<MapInput<TKey, TValue>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'map';
+    /**
+     * The map key schema.
+     */
+    key: TKey;
+    /**
+     * The map value schema.
+     */
+    value: TValue;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<MapOutput<TKey, TValue>> | undefined;
+};
+/**
+ * Creates a map schema.
+ *
+ * @param key The key schema.
+ * @param value The value schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A map schema.
+ */
+declare function map<TKey extends BaseSchema, TValue extends BaseSchema>(key: TKey, value: TValue, pipe?: Pipe<MapOutput<TKey, TValue>>): MapSchema<TKey, TValue>;
+/**
+ * Creates a map schema.
+ *
+ * @param key The key schema.
+ * @param value The value schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A map schema.
+ */
+declare function map<TKey extends BaseSchema, TValue extends BaseSchema>(key: TKey, value: TValue, message?: ErrorMessage, pipe?: Pipe<MapOutput<TKey, TValue>>): MapSchema<TKey, TValue>;
+
+/**
+ * Map schema async type.
+ */
+type MapSchemaAsync<TKey extends BaseSchema | BaseSchemaAsync, TValue extends BaseSchema | BaseSchemaAsync, TOutput = MapOutput<TKey, TValue>> = BaseSchemaAsync<MapInput<TKey, TValue>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'map';
+    /**
+     * The map key schema.
+     */
+    key: TKey;
+    /**
+     * The map value schema.
+     */
+    value: TValue;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<MapOutput<TKey, TValue>> | undefined;
+};
+/**
+ * Creates an async map schema.
+ *
+ * @param key The key schema.
+ * @param value The value schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async map schema.
+ */
+declare function mapAsync<TKey extends BaseSchema | BaseSchemaAsync, TValue extends BaseSchema | BaseSchemaAsync>(key: TKey, value: TValue, pipe?: PipeAsync<MapOutput<TKey, TValue>>): MapSchemaAsync<TKey, TValue>;
+/**
+ * Creates an async map schema.
+ *
+ * @param key The key schema.
+ * @param value The value schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async map schema.
+ */
+declare function mapAsync<TKey extends BaseSchema | BaseSchemaAsync, TValue extends BaseSchema | BaseSchemaAsync>(key: TKey, value: TValue, message?: ErrorMessage, pipe?: PipeAsync<MapOutput<TKey, TValue>>): MapSchemaAsync<TKey, TValue>;
+
+/**
+ * NaN schema type.
+ */
+type NanSchema<TOutput = number> = BaseSchema<number, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'nan';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates a NaN schema.
+ *
+ * @param message The error message.
+ *
+ * @returns A NaN schema.
+ */
+declare function nan(message?: ErrorMessage): NanSchema;
+
+/**
+ * NaN schema async type.
+ */
+type NanSchemaAsync<TOutput = number> = BaseSchemaAsync<number, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'nan';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async NaN schema.
+ *
+ * @param message The error message.
+ *
+ * @returns An async NaN schema.
+ */
+declare function nanAsync(message?: ErrorMessage): NanSchemaAsync;
+
+/**
+ * Never schema type.
+ */
+type NeverSchema = BaseSchema<never> & {
+    /**
+     * The schema type.
+     */
+    type: 'never';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates a never schema.
+ *
+ * @param message The error message.
+ *
+ * @returns A never schema.
+ */
+declare function never(message?: ErrorMessage): NeverSchema;
+
+/**
+ * Never schema async type.
+ */
+type NeverSchemaAsync = BaseSchemaAsync<never> & {
+    /**
+     * The schema type.
+     */
+    type: 'never';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async never schema.
+ *
+ * @param message The error message.
+ *
+ * @returns An async never schema.
+ */
+declare function neverAsync(message?: ErrorMessage): NeverSchemaAsync;
+
+/**
+ * Non nullable type.
+ */
+type NonNullable$1<T> = T extends null ? never : T;
+/**
+ * Non nullable schema type.
+ */
+type NonNullableSchema<TWrapped extends BaseSchema, TOutput = NonNullable$1<Output<TWrapped>>> = BaseSchema<NonNullable$1<Input<TWrapped>>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'non_nullable';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates a non nullable schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param message The error message.
+ *
+ * @returns A non nullable schema.
+ */
+declare function nonNullable<TWrapped extends BaseSchema>(wrapped: TWrapped, message?: ErrorMessage): NonNullableSchema<TWrapped>;
+
+/**
+ * Non nullable schema async type.
+ */
+type NonNullableSchemaAsync<TWrapped extends BaseSchema | BaseSchemaAsync, TOutput = NonNullable$1<Output<TWrapped>>> = BaseSchemaAsync<NonNullable$1<Input<TWrapped>>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'non_nullable';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async non nullable schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param message The error message.
+ *
+ * @returns An async non nullable schema.
+ */
+declare function nonNullableAsync<TWrapped extends BaseSchema | BaseSchemaAsync>(wrapped: TWrapped, message?: ErrorMessage): NonNullableSchemaAsync<TWrapped>;
+
+/**
+ * Non nullish type.
+ */
+type NonNullish<T> = T extends null | undefined ? never : T;
+/**
+ * Non nullish schema type.
+ */
+type NonNullishSchema<TWrapped extends BaseSchema, TOutput = NonNullish<Output<TWrapped>>> = BaseSchema<NonNullish<Input<TWrapped>>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'non_nullish';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates a non nullish schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param message The error message.
+ *
+ * @returns A non nullish schema.
+ */
+declare function nonNullish<TWrapped extends BaseSchema>(wrapped: TWrapped, message?: ErrorMessage): NonNullishSchema<TWrapped>;
+
+/**
+ * Non nullish schema async type.
+ */
+type NonNullishSchemaAsync<TWrapped extends BaseSchema | BaseSchemaAsync, TOutput = NonNullish<Output<TWrapped>>> = BaseSchemaAsync<NonNullish<Input<TWrapped>>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'non_nullish';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async non nullish schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param message The error message.
+ *
+ * @returns An async non nullish schema.
+ */
+declare function nonNullishAsync<TWrapped extends BaseSchema | BaseSchemaAsync>(wrapped: TWrapped, message?: ErrorMessage): NonNullishSchemaAsync<TWrapped>;
+
+/**
+ * Non optional type.
+ */
+type NonOptional<T> = T extends undefined ? never : T;
+/**
+ * Non optional schema type.
+ */
+type NonOptionalSchema<TWrapped extends BaseSchema, TOutput = NonOptional<Output<TWrapped>>> = BaseSchema<NonOptional<Input<TWrapped>>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'non_optional';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates a non optional schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param message The error message.
+ *
+ * @returns A non optional schema.
+ */
+declare function nonOptional<TWrapped extends BaseSchema>(wrapped: TWrapped, message?: ErrorMessage): NonOptionalSchema<TWrapped>;
+
+/**
+ * Non optional schema async type.
+ */
+type NonOptionalSchemaAsync<TWrapped extends BaseSchema | BaseSchemaAsync, TOutput = NonOptional<Output<TWrapped>>> = BaseSchemaAsync<NonOptional<Input<TWrapped>>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'non_optional';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async non optional schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param message The error message.
+ *
+ * @returns An async non optional schema.
+ */
+declare function nonOptionalAsync<TWrapped extends BaseSchema | BaseSchemaAsync>(wrapped: TWrapped, message?: ErrorMessage): NonOptionalSchemaAsync<TWrapped>;
+
+/**
+ * Nullable schema type.
+ */
+type NullableSchema<TWrapped extends BaseSchema, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | undefined) | undefined = undefined, TOutput = TDefault extends Input<TWrapped> | (() => Input<TWrapped>) ? Output<TWrapped> : Output<TWrapped> | null> = BaseSchema<Input<TWrapped> | null, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'nullable';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * The default value.
+     */
+    default: TDefault;
+};
+/**
+ * Creates a nullable schema.
+ *
+ * @param wrapped The wrapped schema.
+ *
+ * @returns A nullable schema.
+ */
+declare function nullable<TWrapped extends BaseSchema>(wrapped: TWrapped): NullableSchema<TWrapped>;
+/**
+ * Creates a nullable schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param default_ The default value.
+ *
+ * @returns A nullable schema.
+ */
+declare function nullable<TWrapped extends BaseSchema, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | undefined) | undefined>(wrapped: TWrapped, default_: TDefault): NullableSchema<TWrapped, TDefault>;
+
+/**
+ * Nullable schema async type.
+ */
+type NullableSchemaAsync<TWrapped extends BaseSchema | BaseSchemaAsync, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | Promise<Input<TWrapped> | undefined> | undefined) | undefined = undefined, TOutput = TDefault extends Input<TWrapped> | (() => Input<TWrapped> | Promise<Input<TWrapped>>) ? Output<TWrapped> : Output<TWrapped> | null> = BaseSchemaAsync<Input<TWrapped> | null, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'nullable';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * Returns the default value.
+     */
+    default: TDefault;
+};
+/**
+ * Creates an async nullable schema.
+ *
+ * @param wrapped The wrapped schema.
+ *
+ * @returns An async nullable schema.
+ */
+declare function nullableAsync<TWrapped extends BaseSchema | BaseSchemaAsync>(wrapped: TWrapped): NullableSchemaAsync<TWrapped>;
+/**
+ * Creates an async nullable schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param default_ The default value.
+ *
+ * @returns An async nullable schema.
+ */
+declare function nullableAsync<TWrapped extends BaseSchema | BaseSchemaAsync, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | Promise<Input<TWrapped> | undefined> | undefined) | undefined>(wrapped: TWrapped, default_: TDefault): NullableSchemaAsync<TWrapped, TDefault>;
+
+/**
+ * Nullish schema type.
+ */
+type NullishSchema<TWrapped extends BaseSchema, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | undefined) | undefined = undefined, TOutput = TDefault extends Input<TWrapped> | (() => Input<TWrapped>) ? Output<TWrapped> : Output<TWrapped> | null | undefined> = BaseSchema<Input<TWrapped> | null | undefined, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'nullish';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * Returns the default value.
+     */
+    default: TDefault;
+};
+/**
+ * Creates a nullish schema.
+ *
+ * @param wrapped The wrapped schema.
+ *
+ * @returns A nullish schema.
+ */
+declare function nullish<TWrapped extends BaseSchema>(wrapped: TWrapped): NullishSchema<TWrapped>;
+/**
+ * Creates a nullish schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param default_ The default value.
+ *
+ * @returns A nullish schema.
+ */
+declare function nullish<TWrapped extends BaseSchema, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | undefined) | undefined>(wrapped: TWrapped, default_: TDefault): NullishSchema<TWrapped, TDefault>;
+
+/**
+ * Nullish schema async type.
+ */
+type NullishSchemaAsync<TWrapped extends BaseSchema | BaseSchemaAsync, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | Promise<Input<TWrapped> | undefined> | undefined) | undefined = undefined, TOutput = TDefault extends Input<TWrapped> | (() => Input<TWrapped> | Promise<Input<TWrapped>>) ? Output<TWrapped> : Output<TWrapped> | null | undefined> = BaseSchemaAsync<Input<TWrapped> | null | undefined, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'nullish';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * Retutns the default value.
+     */
+    default: TDefault;
+};
+/**
+ * Creates an async nullish schema.
+ *
+ * @param wrapped The wrapped schema.
+ *
+ * @returns An async nullish schema.
+ */
+declare function nullishAsync<TWrapped extends BaseSchema | BaseSchemaAsync>(wrapped: TWrapped): NullishSchemaAsync<TWrapped>;
+/**
+ * Creates an async nullish schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param default_ The default value.
+ *
+ * @returns An async nullish schema.
+ */
+declare function nullishAsync<TWrapped extends BaseSchema | BaseSchemaAsync, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | Promise<Input<TWrapped> | undefined> | undefined) | undefined>(wrapped: TWrapped, default_: TDefault): NullishSchemaAsync<TWrapped, TDefault>;
+
+/**
+ * Null schema type.
+ */
+type NullSchema<TOutput = null> = BaseSchema<null, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'null';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates a null schema.
+ *
+ * @param message The error message.
+ *
+ * @returns A null schema.
+ */
+declare function null_(message?: ErrorMessage): NullSchema;
+/**
+ * See {@link null_}
+ *
+ * @deprecated Use `null_` instead.
+ */
+declare const nullType: typeof null_;
+
+/**
+ * Null schema async type.
+ */
+type NullSchemaAsync<TOutput = null> = BaseSchemaAsync<null, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'null';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async null schema.
+ *
+ * @param message The error message.
+ *
+ * @returns An async null schema.
+ */
+declare function nullAsync(message?: ErrorMessage): NullSchemaAsync;
+/**
+ * See {@link nullAsync}
+ *
+ * @deprecated Use `nullAsync` instead.
+ */
+declare const nullTypeAsync: typeof nullAsync;
+
+/**
+ * Number schema type.
+ */
+type NumberSchema<TOutput = number> = BaseSchema<number, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'number';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<number> | undefined;
+};
+/**
+ * Creates a number schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A number schema.
+ */
+declare function number(pipe?: Pipe<number>): NumberSchema;
+/**
+ * Creates a number schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A number schema.
+ */
+declare function number(message?: ErrorMessage, pipe?: Pipe<number>): NumberSchema;
+
+/**
+ * Number schema async type.
+ */
+type NumberSchemaAsync<TOutput = number> = BaseSchemaAsync<number, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'number';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<number> | undefined;
+};
+/**
+ * Creates an async number schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async number schema.
+ */
+declare function numberAsync(pipe?: PipeAsync<number>): NumberSchemaAsync;
+/**
+ * Creates an async number schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async number schema.
+ */
+declare function numberAsync(message?: ErrorMessage, pipe?: PipeAsync<number>): NumberSchemaAsync;
+
+/**
+ * Optional schema type.
+ */
+type OptionalSchema<TWrapped extends BaseSchema, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | undefined) | undefined = undefined, TOutput = TDefault extends Input<TWrapped> | (() => Input<TWrapped>) ? Output<TWrapped> : Output<TWrapped> | undefined> = BaseSchema<Input<TWrapped> | undefined, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'optional';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * Returns the default value.
+     */
+    default: TDefault;
+};
+/**
+ * Creates a optional schema.
+ *
+ * @param wrapped The wrapped schema.
+ *
+ * @returns A optional schema.
+ */
+declare function optional<TWrapped extends BaseSchema>(wrapped: TWrapped): OptionalSchema<TWrapped>;
+/**
+ * Creates a optional schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param default_ The default value.
+ *
+ * @returns A optional schema.
+ */
+declare function optional<TWrapped extends BaseSchema, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | undefined) | undefined>(wrapped: TWrapped, default_: TDefault): OptionalSchema<TWrapped, TDefault>;
+
+/**
+ * Optional schema async type.
+ */
+type OptionalSchemaAsync<TWrapped extends BaseSchema | BaseSchemaAsync, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | Promise<Input<TWrapped> | undefined> | undefined) | undefined = undefined, TOutput = TDefault extends Input<TWrapped> | (() => Input<TWrapped> | Promise<Input<TWrapped>>) ? Output<TWrapped> : Output<TWrapped> | undefined> = BaseSchemaAsync<Input<TWrapped> | undefined, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'optional';
+    /**
+     * The wrapped schema.
+     */
+    wrapped: TWrapped;
+    /**
+     * Returns the default value.
+     */
+    default: TDefault;
+};
+/**
+ * Creates an async optional schema.
+ *
+ * @param wrapped The wrapped schema.
+ *
+ * @returns An async optional schema.
+ */
+declare function optionalAsync<TWrapped extends BaseSchema | BaseSchemaAsync>(wrapped: TWrapped): OptionalSchemaAsync<TWrapped>;
+/**
+ * Creates an async optional schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param default_ The default value.
+ *
+ * @returns An async optional schema.
+ */
+declare function optionalAsync<TWrapped extends BaseSchema | BaseSchemaAsync, TDefault extends Input<TWrapped> | (() => Input<TWrapped> | Promise<Input<TWrapped> | undefined> | undefined) | undefined>(wrapped: TWrapped, default_: TDefault): OptionalSchemaAsync<TWrapped, TDefault>;
+
+/**
+ * Object entries async type.
+ */
+type ObjectEntriesAsync = Record<string, BaseSchema | BaseSchemaAsync>;
+/**
+ * Object schema async type.
+ */
+type ObjectSchemaAsync<TEntries extends ObjectEntriesAsync, TRest extends BaseSchema | BaseSchemaAsync | undefined = undefined, TOutput = ObjectOutput<TEntries, TRest>> = BaseSchemaAsync<ObjectInput<TEntries, TRest>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'object';
+    /**
+     * The object entries schema.
+     */
+    entries: TEntries;
+    /**
+     * The object rest schema.
+     */
+    rest: TRest;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<ObjectOutput<TEntries, TRest>> | undefined;
+};
+/**
+ * Creates an async object schema.
+ *
+ * @param entries The object entries.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function objectAsync<TEntries extends ObjectEntriesAsync>(entries: TEntries, pipe?: PipeAsync<ObjectOutput<TEntries, undefined>>): ObjectSchemaAsync<TEntries>;
+/**
+ * Creates an async object schema.
+ *
+ * @param entries The object entries.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function objectAsync<TEntries extends ObjectEntriesAsync>(entries: TEntries, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<TEntries, undefined>>): ObjectSchemaAsync<TEntries>;
+/**
+ * Creates an async object schema.
+ *
+ * @param entries The object entries.
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function objectAsync<TEntries extends ObjectEntriesAsync, TRest extends BaseSchema | BaseSchemaAsync | undefined>(entries: TEntries, rest: TRest, pipe?: PipeAsync<ObjectOutput<TEntries, TRest>>): ObjectSchemaAsync<TEntries, TRest>;
+/**
+ * Creates an async object schema.
+ *
+ * @param entries The object entries.
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function objectAsync<TEntries extends ObjectEntriesAsync, TRest extends BaseSchema | BaseSchemaAsync | undefined>(entries: TEntries, rest: TRest, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<TEntries, TRest>>): ObjectSchemaAsync<TEntries, TRest>;
+
+/**
+ * Object path item type.
+ */
+type ObjectPathItem = {
+    type: 'object';
+    input: Record<string, unknown>;
+    key: string;
+    value: unknown;
+};
+/**
+ * Required object keys type.
+ */
+type RequiredKeys<TEntries extends ObjectEntries | ObjectEntriesAsync, TObject extends EntriesInput<TEntries> | EntriesOutput<TEntries>> = {
+    [TKey in keyof TEntries]: TEntries[TKey] extends OptionalSchema<any, any> | OptionalSchemaAsync<any, any> ? undefined extends TObject[TKey] ? never : TKey : TKey;
+}[keyof TEntries];
+/**
+ * Optional object keys type.
+ */
+type OptionalKeys<TEntries extends ObjectEntries | ObjectEntriesAsync, TObject extends EntriesInput<TEntries> | EntriesOutput<TEntries>> = {
+    [TKey in keyof TEntries]: TEntries[TKey] extends OptionalSchema<any, any> | OptionalSchemaAsync<any, any> ? undefined extends TObject[TKey] ? TKey : never : never;
+}[keyof TEntries];
+/**
+ * Entries input inference type.
+ */
+type EntriesInput<TEntries extends ObjectEntries | ObjectEntriesAsync> = {
+    [TKey in keyof TEntries]: Input<TEntries[TKey]>;
+};
+/**
+ * Entries output inference type.
+ */
+type EntriesOutput<TEntries extends ObjectEntries | ObjectEntriesAsync> = {
+    [TKey in keyof TEntries]: Output<TEntries[TKey]>;
+};
+/**
+ * Object with question marks type.
+ */
+type WithQuestionMarks<TEntries extends ObjectEntries | ObjectEntriesAsync, TObject extends EntriesInput<TEntries> | EntriesOutput<TEntries>> = Pick<TObject, RequiredKeys<TEntries, TObject>> & Partial<Pick<TObject, OptionalKeys<TEntries, TObject>>>;
+/**
+ * Object input inference type.
+ */
+type ObjectInput<TEntries extends ObjectEntries | ObjectEntriesAsync, TRest extends BaseSchema | BaseSchemaAsync | undefined> = TRest extends undefined | NeverSchema | NeverSchemaAsync ? ResolveObject<WithQuestionMarks<TEntries, EntriesInput<TEntries>>> : TRest extends BaseSchema | BaseSchemaAsync ? ResolveObject<WithQuestionMarks<TEntries, EntriesInput<TEntries>>> & Record<string, Input<TRest>> : never;
+/**
+ * Object output inference type.
+ */
+type ObjectOutput<TEntries extends ObjectEntries | ObjectEntriesAsync, TRest extends BaseSchema | BaseSchemaAsync | undefined> = TRest extends undefined | NeverSchema | NeverSchemaAsync ? ResolveObject<WithQuestionMarks<TEntries, EntriesOutput<TEntries>>> : TRest extends BaseSchema | BaseSchemaAsync ? ResolveObject<WithQuestionMarks<TEntries, EntriesOutput<TEntries>>> & Record<string, Output<TRest>> : never;
+
+/**
+ * Object entries type.
+ */
+type ObjectEntries = Record<string, BaseSchema>;
+/**
+ * Object schema type.
+ */
+type ObjectSchema<TEntries extends ObjectEntries, TRest extends BaseSchema | undefined = undefined, TOutput = ObjectOutput<TEntries, TRest>> = BaseSchema<ObjectInput<TEntries, TRest>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'object';
+    /**
+     * The object entries schema.
+     */
+    entries: TEntries;
+    /**
+     * The object rest schema.
+     */
+    rest: TRest;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<ObjectOutput<TEntries, TRest>> | undefined;
+};
+/**
+ * Creates an object schema.
+ *
+ * @param entries The object entries.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function object<TEntries extends ObjectEntries>(entries: TEntries, pipe?: Pipe<ObjectOutput<TEntries, undefined>>): ObjectSchema<TEntries>;
+/**
+ * Creates an object schema.
+ *
+ * @param entries The object entries.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function object<TEntries extends ObjectEntries>(entries: TEntries, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<TEntries, undefined>>): ObjectSchema<TEntries>;
+/**
+ * Creates an object schema.
+ *
+ * @param entries The object entries.
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function object<TEntries extends ObjectEntries, TRest extends BaseSchema | undefined>(entries: TEntries, rest: TRest, pipe?: Pipe<ObjectOutput<TEntries, TRest>>): ObjectSchema<TEntries, TRest>;
+/**
+ * Creates an object schema.
+ *
+ * @param entries The object entries.
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function object<TEntries extends ObjectEntries, TRest extends BaseSchema | undefined>(entries: TEntries, rest: TRest, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<TEntries, TRest>>): ObjectSchema<TEntries, TRest>;
+
+/**
+ * Picklist options type.
+ */
+type PicklistOptions = MaybeReadonly<string[]>;
+
+/**
+ * Picklist schema type.
+ */
+type PicklistSchema<TOptions extends PicklistOptions, TOutput = TOptions[number]> = BaseSchema<TOptions[number], TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'picklist';
+    /**
+     * The picklist options.
+     */
+    options: TOptions;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates a picklist schema.
+ *
+ * @param options The picklist value.
+ * @param message The error message.
+ *
+ * @returns A picklist schema.
+ */
+declare function picklist<const TOptions extends PicklistOptions>(options: TOptions, message?: ErrorMessage): PicklistSchema<TOptions>;
+/**
+ * See {@link picklist}
+ *
+ * @deprecated Use `picklist` instead.
+ */
+declare const enumType: typeof picklist;
+
+/**
+ * Picklist schema async type.
+ */
+type PicklistSchemaAsync<TOptions extends PicklistOptions, TOutput = TOptions[number]> = BaseSchemaAsync<TOptions[number], TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'picklist';
+    /**
+     * The picklist value.
+     */
+    options: TOptions;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async picklist schema.
+ *
+ * @param options The picklist options.
+ * @param message The error message.
+ *
+ * @returns An async picklist schema.
+ */
+declare function picklistAsync<const TOptions extends PicklistOptions>(options: TOptions, message?: ErrorMessage): PicklistSchemaAsync<TOptions>;
+/**
+ * See {@link picklistAsync}
+ *
+ * @deprecated Use `picklistAsync` instead.
+ */
+declare const enumTypeAsync: typeof picklistAsync;
+
+/**
+ * Special schema type.
+ */
+type SpecialSchema<TInput, TOutput = TInput> = BaseSchema<TInput, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'special';
+    /**
+     * The type check function.
+     */
+    check: (input: unknown) => boolean;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<TInput> | undefined;
+};
+/**
+ * Creates a special schema.
+ *
+ * @param check The type check function.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A special schema.
+ */
+declare function special<TInput>(check: (input: unknown) => boolean, pipe?: Pipe<TInput>): SpecialSchema<TInput>;
+/**
+ * Creates a special schema.
+ *
+ * @param check The type check function.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A special schema.
+ */
+declare function special<TInput>(check: (input: unknown) => boolean, message?: ErrorMessage, pipe?: Pipe<TInput>): SpecialSchema<TInput>;
+
+/**
+ * Special schema async type.
+ */
+type SpecialSchemaAsync<TInput, TOutput = TInput> = BaseSchemaAsync<TInput, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'special';
+    /**
+     * The type check function.
+     */
+    check: (input: unknown) => boolean | Promise<boolean>;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<TInput> | undefined;
+};
+/**
+ * Creates an async special schema.
+ *
+ * @param check The type check function.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async special schema.
+ */
+declare function specialAsync<TInput>(check: (input: unknown) => boolean | Promise<boolean>, pipe?: PipeAsync<TInput>): SpecialSchemaAsync<TInput>;
+/**
+ * Creates a special schema.
+ *
+ * @param check The type check function.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A special schema.
+ */
+declare function specialAsync<TInput>(check: (input: unknown) => boolean | Promise<boolean>, message?: ErrorMessage, pipe?: PipeAsync<TInput>): SpecialSchemaAsync<TInput>;
+
+/**
+ * String schema type.
+ */
+type StringSchema<TOutput = string> = BaseSchema<string, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'string';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<string> | undefined;
+};
+/**
+ * Creates a string schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A string schema.
+ */
+declare function string(pipe?: Pipe<string>): StringSchema;
+/**
+ * Creates a string schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A string schema.
+ */
+declare function string(message?: ErrorMessage, pipe?: Pipe<string>): StringSchema;
+
+/**
+ * String schema async type.
+ */
+type StringSchemaAsync<TOutput = string> = BaseSchemaAsync<string, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'string';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<string> | undefined;
+};
+/**
+ * Creates an async string schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async string schema.
+ */
+declare function stringAsync(pipe?: PipeAsync<string>): StringSchemaAsync;
+/**
+ * Creates an async string schema.
+ *
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async string schema.
+ */
+declare function stringAsync(message?: ErrorMessage, pipe?: PipeAsync<string>): StringSchemaAsync;
+
+/**
+ * Union options type.
+ */
+type UnionOptions = MaybeReadonly<BaseSchema[]>;
+/**
+ * Union schema type.
+ */
+type UnionSchema<TOptions extends UnionOptions, TOutput = Output<TOptions[number]>> = BaseSchema<Input<TOptions[number]>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'union';
+    /**
+     * The union options.
+     */
+    options: TOptions;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<Input<TOptions[number]>> | undefined;
+};
+/**
+ * Creates a union schema.
+ *
+ * @param options The union options.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A union schema.
+ */
+declare function union<TOptions extends UnionOptions>(options: TOptions, pipe?: Pipe<Input<TOptions[number]>>): UnionSchema<TOptions>;
+/**
+ * Creates a union schema.
+ *
+ * @param options The union options.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A union schema.
+ */
+declare function union<TOptions extends UnionOptions>(options: TOptions, message?: ErrorMessage, pipe?: Pipe<Input<TOptions[number]>>): UnionSchema<TOptions>;
+
+/**
+ * Union options async type.
+ */
+type UnionOptionsAsync = MaybeReadonly<(BaseSchema | BaseSchemaAsync)[]>;
+/**
+ * Union schema async type.
+ */
+type UnionSchemaAsync<TOptions extends UnionOptionsAsync, TOutput = Output<TOptions[number]>> = BaseSchemaAsync<Input<TOptions[number]>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'union';
+    /**
+     * The union options.
+     */
+    options: TOptions;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<Input<TOptions[number]>> | undefined;
+};
+/**
+ * Creates an async union schema.
+ *
+ * @param options The union options.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async union schema.
+ */
+declare function unionAsync<TOptions extends UnionOptionsAsync>(options: TOptions, pipe?: PipeAsync<Input<TOptions[number]>>): UnionSchemaAsync<TOptions>;
+/**
+ * Creates an async union schema.
+ *
+ * @param options The union options.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async union schema.
+ */
+declare function unionAsync<TOptions extends UnionOptionsAsync>(options: TOptions, message?: ErrorMessage, pipe?: PipeAsync<Input<TOptions[number]>>): UnionSchemaAsync<TOptions>;
+
+/**
+ * Record key type.
+ */
+type RecordKeyAsync = EnumSchema<any, string | number | symbol> | EnumSchemaAsync<any, string | number | symbol> | PicklistSchema<any, string | number | symbol> | PicklistSchemaAsync<any, string | number | symbol> | SpecialSchema<any, string | number | symbol> | SpecialSchemaAsync<any, string | number | symbol> | StringSchema<string | number | symbol> | StringSchemaAsync<string | number | symbol> | UnionSchema<any, string | number | symbol> | UnionSchemaAsync<any, string | number | symbol>;
+/**
+ * Record schema async type.
+ */
+type RecordSchemaAsync<TKey extends RecordKeyAsync, TValue extends BaseSchema | BaseSchemaAsync, TOutput = RecordOutput<TKey, TValue>> = BaseSchemaAsync<RecordInput<TKey, TValue>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'record';
+    /**
+     * The key schema.
+     */
+    key: TKey;
+    /**
+     * The value schema.
+     */
+    value: TValue;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<RecordOutput<TKey, TValue>> | undefined;
+};
+/**
+ * Creates an async record schema.
+ *
+ * @param value The value schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async record schema.
+ */
+declare function recordAsync<TValue extends BaseSchema | BaseSchemaAsync>(value: TValue, pipe?: PipeAsync<RecordOutput<StringSchema, TValue>>): RecordSchemaAsync<StringSchema, TValue>;
+/**
+ * Creates an async record schema.
+ *
+ * @param value The value schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async record schema.
+ */
+declare function recordAsync<TValue extends BaseSchema | BaseSchemaAsync>(value: TValue, message?: ErrorMessage, pipe?: PipeAsync<RecordOutput<StringSchema, TValue>>): RecordSchemaAsync<StringSchema, TValue>;
+/**
+ * Creates an async record schema.
+ *
+ * @param key The key schema.
+ * @param value The value schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async record schema.
+ */
+declare function recordAsync<TKey extends RecordKeyAsync, TValue extends BaseSchema | BaseSchemaAsync>(key: TKey, value: TValue, pipe?: PipeAsync<RecordOutput<TKey, TValue>>): RecordSchemaAsync<TKey, TValue>;
+/**
+ * Creates an async record schema.
+ *
+ * @param key The key schema.
+ * @param value The value schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async record schema.
+ */
+declare function recordAsync<TKey extends RecordKeyAsync, TValue extends BaseSchema | BaseSchemaAsync>(key: TKey, value: TValue, message?: ErrorMessage, pipe?: PipeAsync<RecordOutput<TKey, TValue>>): RecordSchemaAsync<TKey, TValue>;
+
+/**
+ * Record path item type.
+ */
+type RecordPathItem = {
+    type: 'record';
+    input: Record<string | number | symbol, unknown>;
+    key: string | number | symbol;
+    value: unknown;
+};
+/**
+ * Partial key schema type.
+ */
+type PartialKeySchema = PicklistSchema<any> | PicklistSchemaAsync<any> | EnumSchema<any> | EnumSchemaAsync<any> | UnionSchema<any> | UnionSchemaAsync<any>;
+/**
+ * Record input inference type.
+ */
+type RecordInput<TKey extends RecordKey | RecordKeyAsync, TValue extends BaseSchema | BaseSchemaAsync> = ResolveObject<TKey extends PartialKeySchema ? Partial<Record<Input<TKey>, Input<TValue>>> : Record<Input<TKey>, Input<TValue>>>;
+/**
+ * Record output inference type.
+ */
+type RecordOutput<TKey extends RecordKey | RecordKeyAsync, TValue extends BaseSchema | BaseSchemaAsync> = ResolveObject<TKey extends PartialKeySchema ? Partial<Record<Output<TKey>, Output<TValue>>> : Record<Output<TKey>, Output<TValue>>>;
+
+/**
+ * Record key type.
+ */
+type RecordKey = EnumSchema<any, string | number | symbol> | PicklistSchema<any, string | number | symbol> | SpecialSchema<any, string | number | symbol> | StringSchema<string | number | symbol> | UnionSchema<any, string | number | symbol>;
+/**
+ * Record schema type.
+ */
+type RecordSchema<TKey extends RecordKey, TValue extends BaseSchema, TOutput = RecordOutput<TKey, TValue>> = BaseSchema<RecordInput<TKey, TValue>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'record';
+    /**
+     * The record key schema.
+     */
+    key: TKey;
+    /**
+     * The record value schema.
+     */
+    value: TValue;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<RecordOutput<TKey, TValue>> | undefined;
+};
+/**
+ * Creates a record schema.
+ *
+ * @param value The value schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A record schema.
+ */
+declare function record<TValue extends BaseSchema>(value: TValue, pipe?: Pipe<RecordOutput<StringSchema, TValue>>): RecordSchema<StringSchema, TValue>;
+/**
+ * Creates a record schema.
+ *
+ * @param value The value schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A record schema.
+ */
+declare function record<TValue extends BaseSchema>(value: TValue, message?: ErrorMessage, pipe?: Pipe<RecordOutput<StringSchema, TValue>>): RecordSchema<StringSchema, TValue>;
+/**
+ * Creates a record schema.
+ *
+ * @param key The key schema.
+ * @param value The value schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A record schema.
+ */
+declare function record<TKey extends RecordKey, TValue extends BaseSchema>(key: TKey, value: TValue, pipe?: Pipe<RecordOutput<TKey, TValue>>): RecordSchema<TKey, TValue>;
+/**
+ * Creates a record schema.
+ *
+ * @param key The key schema.
+ * @param value The value schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A record schema.
+ */
+declare function record<TKey extends RecordKey, TValue extends BaseSchema>(key: TKey, value: TValue, message?: ErrorMessage, pipe?: Pipe<RecordOutput<TKey, TValue>>): RecordSchema<TKey, TValue>;
+
+/**
+ * Recursive schema type.
+ */
+type RecursiveSchema<TSchemaGetter extends () => BaseSchema, TOutput = Output<ReturnType<TSchemaGetter>>> = BaseSchema<Input<ReturnType<TSchemaGetter>>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'recursive';
+    /**
+     * The schema getter.
+     */
+    getter: TSchemaGetter;
+};
+/**
+ * Creates a recursive schema.
+ *
+ * @param getter The schema getter.
+ *
+ * @returns A recursive schema.
+ */
+declare function recursive<TSchemaGetter extends () => BaseSchema>(getter: TSchemaGetter): RecursiveSchema<TSchemaGetter>;
+
+/**
+ * Recursive schema async type.
+ */
+type RecursiveSchemaAsync<TSchemaGetter extends () => BaseSchema | BaseSchemaAsync, TOutput = Output<ReturnType<TSchemaGetter>>> = BaseSchemaAsync<Input<ReturnType<TSchemaGetter>>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'recursive';
+    /**
+     * The schema getter.
+     */
+    getter: TSchemaGetter;
+};
+/**
+ * Creates an async recursive schema.
+ *
+ * @param getter The schema getter.
+ *
+ * @returns An async recursive schema.
+ */
+declare function recursiveAsync<TSchemaGetter extends () => BaseSchema | BaseSchemaAsync>(getter: TSchemaGetter): RecursiveSchemaAsync<TSchemaGetter>;
+
+/**
+ * Set path item type.
+ */
+type SetPathItem = {
+    type: 'set';
+    input: Set<unknown>;
+    key: number;
+    value: unknown;
+};
+/**
+ * Set output inference type.
+ */
+type SetInput<TValue extends BaseSchema | BaseSchemaAsync> = Set<Input<TValue>>;
+/**
+ * Set output inference type.
+ */
+type SetOutput<TValue extends BaseSchema | BaseSchemaAsync> = Set<Output<TValue>>;
+
+/**
+ * Set schema type.
+ */
+type SetSchema<TValue extends BaseSchema, TOutput = SetOutput<TValue>> = BaseSchema<SetInput<TValue>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'set';
+    /**
+     * The set value schema.
+     */
+    value: TValue;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<SetOutput<TValue>> | undefined;
+};
+/**
+ * Creates a set schema.
+ *
+ * @param value The value schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A set schema.
+ */
+declare function set<TValue extends BaseSchema>(value: TValue, pipe?: Pipe<SetOutput<TValue>>): SetSchema<TValue>;
+/**
+ * Creates a set schema.
+ *
+ * @param value The value schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A set schema.
+ */
+declare function set<TValue extends BaseSchema>(value: TValue, message?: ErrorMessage, pipe?: Pipe<SetOutput<TValue>>): SetSchema<TValue>;
+
+/**
+ * Set schema async type.
+ */
+type SetSchemaAsync<TValue extends BaseSchema | BaseSchemaAsync, TOutput = SetOutput<TValue>> = BaseSchemaAsync<SetInput<TValue>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'set';
+    /**
+     * The set value schema.
+     */
+    value: TValue;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<SetOutput<TValue>> | undefined;
+};
+/**
+ * Creates an async set schema.
+ *
+ * @param value The value schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async set schema.
+ */
+declare function setAsync<TValue extends BaseSchema | BaseSchemaAsync>(value: TValue, pipe?: PipeAsync<SetOutput<TValue>>): SetSchemaAsync<TValue>;
+/**
+ * Creates an async set schema.
+ *
+ * @param value The value schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async set schema.
+ */
+declare function setAsync<TValue extends BaseSchema | BaseSchemaAsync>(value: TValue, message?: ErrorMessage, pipe?: PipeAsync<SetOutput<TValue>>): SetSchemaAsync<TValue>;
+
+/**
+ * Symbol schema type.
+ */
+type SymbolSchema<TOutput = symbol> = BaseSchema<symbol, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'symbol';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates a symbol schema.
+ *
+ * @param message The error message.
+ *
+ * @returns A symbol schema.
+ */
+declare function symbol(message?: ErrorMessage): SymbolSchema;
+
+/**
+ * Symbol schema async type.
+ */
+type SymbolSchemaAsync<TOutput = symbol> = BaseSchemaAsync<symbol, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'symbol';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async symbol schema.
+ *
+ * @param message The error message.
+ *
+ * @returns An async symbol schema.
+ */
+declare function symbolAsync(message?: ErrorMessage): SymbolSchemaAsync;
+
+/**
+ * Tuple shape async type.
+ */
+type TupleItemsAsync = [
+    BaseSchema | BaseSchemaAsync,
+    ...(BaseSchema | BaseSchemaAsync)[]
+];
+/**
+ * Tuple schema async type.
+ */
+type TupleSchemaAsync<TItems extends TupleItemsAsync, TRest extends BaseSchema | BaseSchemaAsync | undefined = undefined, TOutput = TupleOutput<TItems, TRest>> = BaseSchemaAsync<TupleInput<TItems, TRest>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'tuple';
+    /**
+     * The tuple items schema.
+     */
+    items: TItems;
+    /**
+     * The tuple rest schema.
+     */
+    rest: TRest;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<TupleOutput<TItems, TRest>> | undefined;
+};
+/**
+ * Creates an async tuple schema.
+ *
+ * @param items The items schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async tuple schema.
+ */
+declare function tupleAsync<TItems extends TupleItemsAsync>(items: TItems, pipe?: PipeAsync<TupleOutput<TItems, undefined>>): TupleSchemaAsync<TItems>;
+/**
+ * Creates an async tuple schema.
+ *
+ * @param items The items schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async tuple schema.
+ */
+declare function tupleAsync<TItems extends TupleItemsAsync>(items: TItems, message?: ErrorMessage, pipe?: PipeAsync<TupleOutput<TItems, undefined>>): TupleSchemaAsync<TItems>;
+/**
+ * Creates an async tuple schema.
+ *
+ * @param items The items schema.
+ * @param rest The rest schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async tuple schema.
+ */
+declare function tupleAsync<TItems extends TupleItemsAsync, TRest extends BaseSchema | BaseSchemaAsync | undefined>(items: TItems, rest: TRest, pipe?: PipeAsync<TupleOutput<TItems, TRest>>): TupleSchemaAsync<TItems, TRest>;
+/**
+ * Creates an async tuple schema.
+ *
+ * @param items The items schema.
+ * @param rest The rest schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async tuple schema.
+ */
+declare function tupleAsync<TItems extends TupleItemsAsync, TRest extends BaseSchema | BaseSchemaAsync | undefined>(items: TItems, rest: TRest, message?: ErrorMessage, pipe?: PipeAsync<TupleOutput<TItems, TRest>>): TupleSchemaAsync<TItems, TRest>;
+
+/**
+ * Tuple path item type.
+ */
+type TuplePathItem = {
+    type: 'tuple';
+    input: [unknown, ...unknown[]];
+    key: number;
+    value: unknown;
+};
+/**
+ * Tuple input inference type.
+ */
+type TupleInput<TItems extends TupleItems | TupleItemsAsync, TRest extends BaseSchema | BaseSchemaAsync | undefined> = TRest extends undefined | NeverSchema | NeverSchemaAsync ? {
+    [TKey in keyof TItems]: Input<TItems[TKey]>;
+} : TRest extends BaseSchema | BaseSchemaAsync ? [
+    ...{
+        [TKey in keyof TItems]: Input<TItems[TKey]>;
+    },
+    ...Input<TRest>[]
+] : never;
+/**
+ * Tuple with rest output inference type.
+ */
+type TupleOutput<TItems extends TupleItems | TupleItemsAsync, TRest extends BaseSchema | BaseSchemaAsync | undefined> = TRest extends undefined | NeverSchema | NeverSchemaAsync ? {
+    [TKey in keyof TItems]: Output<TItems[TKey]>;
+} : TRest extends BaseSchema | BaseSchemaAsync ? [
+    ...{
+        [TKey in keyof TItems]: Output<TItems[TKey]>;
+    },
+    ...Output<TRest>[]
+] : never;
+
+/**
+ * Tuple shape type.
+ */
+type TupleItems = [BaseSchema, ...BaseSchema[]];
+/**
+ * Tuple schema type.
+ */
+type TupleSchema<TItems extends TupleItems, TRest extends BaseSchema | undefined = undefined, TOutput = TupleOutput<TItems, TRest>> = BaseSchema<TupleInput<TItems, TRest>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'tuple';
+    /**
+     * The tuple items schema.
+     */
+    items: TItems;
+    /**
+     * The tuple rest schema.
+     */
+    rest: TRest;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<TupleOutput<TItems, TRest>> | undefined;
+};
+/**
+ * Creates a tuple schema.
+ *
+ * @param items The items schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A tuple schema.
+ */
+declare function tuple<TItems extends TupleItems>(items: TItems, pipe?: Pipe<TupleOutput<TItems, undefined>>): TupleSchema<TItems>;
+/**
+ * Creates a tuple schema.
+ *
+ * @param items The items schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A tuple schema.
+ */
+declare function tuple<TItems extends TupleItems>(items: TItems, message?: ErrorMessage, pipe?: Pipe<TupleOutput<TItems, undefined>>): TupleSchema<TItems>;
+/**
+ * Creates a tuple schema.
+ *
+ * @param items The items schema.
+ * @param rest The rest schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A tuple schema.
+ */
+declare function tuple<TItems extends TupleItems, TRest extends BaseSchema | undefined>(items: TItems, rest: TRest, pipe?: Pipe<TupleOutput<TItems, TRest>>): TupleSchema<TItems, TRest>;
+/**
+ * Creates a tuple schema.
+ *
+ * @param items The items schema.
+ * @param rest The rest schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A tuple schema.
+ */
+declare function tuple<TItems extends TupleItems, TRest extends BaseSchema | undefined>(items: TItems, rest: TRest, message?: ErrorMessage, pipe?: Pipe<TupleOutput<TItems, TRest>>): TupleSchema<TItems, TRest>;
+
+/**
+ * Undefined schema type.
+ */
+type UndefinedSchema<TOutput = undefined> = BaseSchema<undefined, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'undefined';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates a undefined schema.
+ *
+ * @param message The error message.
+ *
+ * @returns A undefined schema.
+ */
+declare function undefined_(message?: ErrorMessage): UndefinedSchema;
+/**
+ * See {@link undefined_}
+ *
+ * @deprecated Use `undefined_` instead.
+ */
+declare const undefinedType: typeof undefined_;
+
+/**
+ * Undefined schema async type.
+ */
+type UndefinedSchemaAsync<TOutput = undefined> = BaseSchemaAsync<undefined, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'undefined';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async undefined schema.
+ *
+ * @param message The error message.
+ *
+ * @returns An async undefined schema.
+ */
+declare function undefinedAsync(message?: ErrorMessage): UndefinedSchemaAsync;
+/**
+ * See {@link undefinedAsync}
+ *
+ * @deprecated Use `undefinedAsync` instead.
+ */
+declare const undefinedTypeAsync: typeof undefinedAsync;
+
+/**
+ * Unknown schema type.
+ */
+type UnknownSchema<TOutput = unknown> = BaseSchema<unknown, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'unknown';
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<unknown> | undefined;
+};
+/**
+ * Creates a unknown schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A unknown schema.
+ */
+declare function unknown(pipe?: Pipe<unknown>): UnknownSchema;
+
+/**
+ * Unknown schema async type.
+ */
+type UnknownSchemaAsync<TOutput = unknown> = BaseSchemaAsync<unknown, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'unknown';
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<unknown> | undefined;
+};
+/**
+ * Creates an async unknown schema.
+ *
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async unknown schema.
+ */
+declare function unknownAsync(pipe?: PipeAsync<unknown>): UnknownSchemaAsync;
+
+/**
+ * Variant option type.
+ */
+type VariantOption<TKey extends string> = ObjectSchema<Record<TKey, BaseSchema>, any> | (BaseSchema & {
+    type: 'variant';
+    options: VariantOptions<TKey>;
+});
+/**
+ * Variant options type.
+ */
+type VariantOptions<TKey extends string> = [
+    VariantOption<TKey>,
+    VariantOption<TKey>,
+    ...VariantOption<TKey>[]
+];
+/**
+ * Variant schema type.
+ */
+type VariantSchema<TKey extends string, TOptions extends VariantOptions<TKey>, TOutput = Output<TOptions[number]>> = BaseSchema<Input<TOptions[number]>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'variant';
+    /**
+     * The discriminator key.
+     */
+    key: TKey;
+    /**
+     * The variant options.
+     */
+    options: TOptions;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: Pipe<Input<TOptions[number]>> | undefined;
+};
+/**
+ * Creates a variant (aka discriminated union) schema.
+ *
+ * @param key The discriminator key.
+ * @param options The variant options.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A variant schema.
+ */
+declare function variant<TKey extends string, TOptions extends VariantOptions<TKey>>(key: TKey, options: TOptions, pipe?: Pipe<Input<TOptions[number]>>): VariantSchema<TKey, TOptions>;
+/**
+ * Creates a variant (aka discriminated union) schema.
+ *
+ * @param key The discriminator key.
+ * @param options The variant options.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns A variant schema.
+ */
+declare function variant<TKey extends string, TOptions extends VariantOptions<TKey>>(key: TKey, options: TOptions, message?: ErrorMessage, pipe?: Pipe<Input<TOptions[number]>>): VariantSchema<TKey, TOptions>;
+/**
+ * See {@link variant}
+ *
+ * @deprecated Use `variant` instead.
+ */
+declare const discriminatedUnion: typeof variant;
+
+/**
+ * Variant option async type.
+ */
+type VariantOptionAsync<TKey extends string> = ObjectSchema<Record<TKey, BaseSchema>, any> | ObjectSchemaAsync<Record<TKey, BaseSchema | BaseSchemaAsync>, any> | ((BaseSchema | BaseSchemaAsync) & {
+    type: 'variant';
+    options: VariantOptionsAsync<TKey>;
+});
+/**
+ * Variant options async type.
+ */
+type VariantOptionsAsync<TKey extends string> = [
+    VariantOptionAsync<TKey>,
+    VariantOptionAsync<TKey>,
+    ...VariantOptionAsync<TKey>[]
+];
+/**
+ * Variant schema async type.
+ */
+type VariantSchemaAsync<TKey extends string, TOptions extends VariantOptionsAsync<TKey>, TOutput = Output<TOptions[number]>> = BaseSchemaAsync<Input<TOptions[number]>, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'variant';
+    /**
+     * The discriminator key.
+     */
+    key: TKey;
+    /**
+     * The variant options.
+     */
+    options: TOptions;
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+    /**
+     * The validation and transformation pipeline.
+     */
+    pipe: PipeAsync<Input<TOptions[number]>> | undefined;
+};
+/**
+ * Creates an async variant (aka discriminated union) schema.
+ *
+ * @param key The discriminator key.
+ * @param options The variant options.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async variant schema.
+ */
+declare function variantAsync<TKey extends string, TOptions extends VariantOptionsAsync<TKey>>(key: TKey, options: TOptions, pipe?: PipeAsync<Input<TOptions[number]>>): VariantSchemaAsync<TKey, TOptions>;
+/**
+ * Creates an async variant (aka discriminated union) schema.
+ *
+ * @param key The discriminator key.
+ * @param options The variant options.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async variant schema.
+ */
+declare function variantAsync<TKey extends string, TOptions extends VariantOptionsAsync<TKey>>(key: TKey, options: TOptions, message?: ErrorMessage, pipe?: PipeAsync<Input<TOptions[number]>>): VariantSchemaAsync<TKey, TOptions>;
+/**
+ * See {@link variantAsync}
+ *
+ * @deprecated Use `variantAsync` instead.
+ */
+declare const discriminatedUnionAsync: typeof variantAsync;
+
+/**
+ * Void schema type.
+ */
+type VoidSchema<TOutput = void> = BaseSchema<void, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'void';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates a void schema.
+ *
+ * @param message The error message.
+ *
+ * @returns A void schema.
+ */
+declare function void_(message?: ErrorMessage): VoidSchema;
+/**
+ * See {@link void_}
+ *
+ * @deprecated Use `void_` instead.
+ */
+declare const voidType: typeof void_;
+
+/**
+ * Void schema async type.
+ */
+type VoidSchemaAsync<TOutput = void> = BaseSchemaAsync<void, TOutput> & {
+    /**
+     * The schema type.
+     */
+    type: 'void';
+    /**
+     * The error message.
+     */
+    message: ErrorMessage;
+};
+/**
+ * Creates an async void schema.
+ *
+ * @param message The error message.
+ *
+ * @returns An async void schema.
+ */
+declare function voidAsync(message?: ErrorMessage): VoidSchemaAsync;
+/**
+ * See {@link voidAsync}
+ *
+ * @deprecated Use `voidAsync` instead.
+ */
+declare const voidTypeAsync: typeof voidAsync;
+
+/**
+ * A Valibot error with useful information.
+ */
+declare class ValiError extends Error {
+    issues: Issues;
+    /**
+     * Creates a Valibot error with useful information.
+     *
+     * @param issues The error issues.
+     */
+    constructor(issues: Issues);
+}
+
+/**
+ * Dot path type.
+ */
+type DotPath<TKey, TSchema extends BaseSchema | BaseSchemaAsync> = TKey extends string | number ? `${TKey}` | `${TKey}.${NestedPath<TSchema>}` : never;
+/**
+ * Object path type.
+ */
+type ObjectPath<TEntries extends ObjectEntries | ObjectEntriesAsync> = {
+    [TKey in keyof TEntries]: DotPath<TKey, TEntries[TKey]>;
+}[keyof TEntries];
+/**
+ * Tuple key type.
+ */
+type TupleKey<T extends any[]> = Exclude<keyof T, keyof any[]>;
+/**
+ * Tuple path type.
+ */
+type TuplePath<TItems extends TupleItems | TupleItemsAsync> = {
+    [TKey in TupleKey<TItems>]: DotPath<TKey, TItems[TKey & number]>;
+}[TupleKey<TItems>];
+/**
+ * Nested path type.
+ */
+type NestedPath<TSchema extends BaseSchema | BaseSchemaAsync> = TSchema extends ArraySchema<infer TItem extends BaseSchema> ? DotPath<number, TItem> : TSchema extends ArraySchemaAsync<infer TItem extends BaseSchema | BaseSchemaAsync> ? DotPath<number, TItem> : TSchema extends MapSchema<infer TKey, infer TValue> | MapSchemaAsync<infer TKey, infer TValue> ? DotPath<Input<TKey>, TValue> : TSchema extends ObjectSchema<infer TEntries, infer TRest> | ObjectSchemaAsync<infer TEntries, infer TRest> ? TRest extends BaseSchema | BaseSchemaAsync ? ObjectPath<TEntries> | DotPath<string, TRest> : ObjectPath<TEntries> : TSchema extends RecordSchema<infer TKey, infer TValue> | RecordSchemaAsync<infer TKey, infer TValue> ? DotPath<Input<TKey>, TValue> : TSchema extends RecursiveSchema<infer TSchemaGetter extends () => BaseSchema> ? NestedPath<ReturnType<TSchemaGetter>> : TSchema extends RecursiveSchemaAsync<infer TSchemaGetter extends () => BaseSchema | BaseSchemaAsync> ? NestedPath<ReturnType<TSchemaGetter>> : TSchema extends SetSchema<infer TValue> | SetSchemaAsync<infer TValue> ? DotPath<number, TValue> : TSchema extends TupleSchema<infer TItems, infer TRest> | TupleSchemaAsync<infer TItems, infer TRest> ? TRest extends BaseSchema | BaseSchemaAsync ? TuplePath<TItems> | DotPath<number, TRest> : TuplePath<TItems> : TSchema extends UnionSchema<infer TUnionOptions extends UnionOptions> ? NestedPath<TUnionOptions[number]> : TSchema extends UnionSchemaAsync<infer TUnionOptions extends UnionOptionsAsync> ? NestedPath<TUnionOptions[number]> : never;
+/**
+ * Flat errors type.
+ */
+type FlatErrors<TSchema extends BaseSchema | BaseSchemaAsync = any> = {
+    root?: [string, ...string[]];
+    nested: Partial<Record<NestedPath<TSchema>, [string, ...string[]]>>;
+};
+/**
+ * Flatten the error messages of a Vali error.
+ *
+ * @param error A Vali error.
+ *
+ * @returns Flat errors.
+ */
+declare function flatten<TSchema extends BaseSchema | BaseSchemaAsync = any>(error: ValiError): FlatErrors<TSchema>;
+/**
+ * Flatten the error messages of issues.
+ *
+ * @param issues The issues.
+ *
+ * @returns Flat errors.
+ */
+declare function flatten<TSchema extends BaseSchema | BaseSchemaAsync = any>(issues: Issues): FlatErrors<TSchema>;
+
+/**
+ * Brand symbol.
+ */
+declare const BrandSymbol: unique symbol;
+/**
+ * Brand name type.
+ */
+type BrandName = string | number | symbol;
+/**
+ * Brand type.
+ */
+type Brand<TName extends BrandName> = {
+    [BrandSymbol]: {
+        [TValue in TName]: TValue;
+    };
+};
+/**
+ * Schema with brand type.
+ */
+type SchemaWithBrand<TSchema extends BaseSchema | BaseSchemaAsync, TName extends BrandName> = Omit<TSchema, '_types'> & {
+    _types?: {
+        input: Input<TSchema>;
+        output: Output<TSchema> & Brand<TName>;
+    };
+};
+/**
+ * Brands the output type of a schema.
+ *
+ * @param schema The scheme to be branded.
+ * @param name The brand name.
+ *
+ * @returns The branded schema.
+ */
+declare function brand<TSchema extends BaseSchema | BaseSchemaAsync, TName extends BrandName>(schema: TSchema, name: TName): SchemaWithBrand<TSchema, TName>;
+
+/**
+ * Coerces the input of a schema to match the required type.
+ *
+ * @param schema The affected schema.
+ * @param action The coerceation action.
+ *
+ * @returns The passed schema.
+ */
+declare function coerce<TSchema extends BaseSchema>(schema: TSchema, action: (value: unknown) => unknown): TSchema;
+
+/**
+ * Coerces the input of a async schema to match the required type.
+ *
+ * @param schema The affected schema.
+ * @param action The coerceation action.
+ *
+ * @returns The passed schema.
+ */
+declare function coerceAsync<TSchema extends BaseSchemaAsync>(schema: TSchema, action: (value: unknown) => unknown): TSchema;
+
+/**
+ * Fallback info type.
+ */
+type FallbackInfo = {
+    input: unknown;
+    issues: Issues;
+};
+
+/**
+ * Schema with fallback type.
+ */
+type SchemaWithFallback<TSchema extends BaseSchema = BaseSchema, TFallback extends Output<TSchema> | ((info?: FallbackInfo) => Output<TSchema>) = Output<TSchema>> = TSchema & {
+    /**
+     * The fallback value.
+     */
+    fallback: TFallback;
+};
+/**
+ * Returns a fallback value when validating the passed schema failed.
+ *
+ * @param schema The schema to catch.
+ * @param fallback The fallback value.
+ *
+ * @returns The passed schema.
+ */
+declare function fallback<TSchema extends BaseSchema, const TFallback extends Output<TSchema> | ((info?: FallbackInfo) => Output<TSchema>)>(schema: TSchema, fallback: TFallback): SchemaWithFallback<TSchema, TFallback>;
+
+/**
+ * Schema with fallback async type.
+ */
+type SchemaWithFallbackAsync<TSchema extends BaseSchemaAsync = BaseSchemaAsync, TFallback extends Output<TSchema> | ((info?: FallbackInfo) => Output<TSchema> | Promise<Output<TSchema>>) = Output<TSchema>> = TSchema & {
+    /**
+     * The fallback value.
+     */
+    fallback: TFallback;
+};
+/**
+ * Returns a fallback value when validating the passed schema failed.
+ *
+ * @param schema The schema to catch.
+ * @param fallback The fallback value.
+ *
+ * @returns The passed schema.
+ */
+declare function fallbackAsync<TSchema extends BaseSchemaAsync, const TFallback extends Output<TSchema> | ((info?: FallbackInfo) => Output<TSchema> | Promise<Output<TSchema>>)>(schema: TSchema, fallback: TFallback): SchemaWithFallbackAsync<TSchema, TFallback>;
+
+/**
+ * Path tuple type.
+ */
+type PathTuple<TValue, TKey extends keyof TValue> = TKey extends TKey ? [
+    TKey,
+    ...{
+        0: [];
+        1: [] | PathTuple<TValue[TKey], keyof TValue[TKey] & number>;
+        2: [] | PathTuple<TValue[TKey], keyof TValue[TKey]>;
+    }[TValue[TKey] extends Blob | Date | Map<any, any> | Set<any> ? 0 : TValue[TKey] extends any[] ? 1 : TValue[TKey] extends Record<string, any> ? 2 : 0]
+] : never;
+/**
+ * Path list type.
+ */
+type PathList<TInput extends unknown[] | Record<string, unknown>> = TInput extends any[] ? PathTuple<TInput, number> : PathTuple<TInput, keyof TInput>;
+
+/**
+ * Forwards the issues of the passed validation.
+ *
+ * @param validation The validation.
+ * @param pathList The path list.
+ *
+ * @returns The passed validation.
+ */
+declare function forward<TInput extends unknown[] | Record<string, unknown>>(validation: BaseValidation<TInput>, pathList: PathList<TInput>): BaseValidation<TInput>;
+
+/**
+ * Schema with maybe default async type.
+ */
+type SchemaWithMaybeDefaultAsync<TSchema extends BaseSchemaAsync = BaseSchemaAsync> = TSchema & {
+    /**
+     * The optional default value.
+     */
+    default?: Output<TSchema> | (() => Output<TSchema> | Promise<Output<TSchema> | undefined> | undefined);
+};
+/**
+ * Returns the default value of the schema.
+ *
+ * @param schema The schema to get the default value from.
+ *
+ * @returns The default value.
+ */
+declare function getDefaultAsync<TSchema extends SchemaWithMaybeDefault | SchemaWithMaybeDefaultAsync>(schema: TSchema): Promise<DefaultValue<TSchema>>;
+
+/**
+ * Default value type.
+ */
+type DefaultValue<TSchema extends SchemaWithMaybeDefault | SchemaWithMaybeDefaultAsync> = TSchema['default'] extends Output<TSchema> | undefined ? TSchema['default'] : TSchema['default'] extends () => Output<TSchema> | undefined ? ReturnType<TSchema['default']> : TSchema['default'] extends () => Promise<Output<TSchema> | undefined> ? Awaited<ReturnType<TSchema['default']>> : undefined;
+
+/**
+ * Schema with maybe default type.
+ */
+type SchemaWithMaybeDefault<TSchema extends BaseSchema = BaseSchema> = TSchema & {
+    /**
+     * The optional default value.
+     */
+    default?: Output<TSchema> | (() => Output<TSchema> | undefined);
+};
+/**
+ * Returns the default value of the schema.
+ *
+ * @param schema The schema to get the default value from.
+ *
+ * @returns The default value.
+ */
+declare function getDefault<TSchema extends SchemaWithMaybeDefault>(schema: TSchema): DefaultValue<TSchema>;
+
+/**
+ * Default values type.
+ */
+type DefaultValues<TSchema extends BaseSchema | BaseSchemaAsync> = TSchema extends ObjectSchema<infer TEntries extends ObjectEntries> ? {
+    [TKey in keyof TEntries]: DefaultValues<TEntries[TKey]>;
+} : TSchema extends ObjectSchemaAsync<infer TEntries extends ObjectEntriesAsync> ? {
+    [TKey in keyof TEntries]: DefaultValues<TEntries[TKey]>;
+} : TSchema extends TupleSchema<infer TItems> ? {
+    [TKey in keyof TItems]: DefaultValues<TItems[TKey]>;
+} : TSchema extends TupleSchemaAsync<infer TItems> ? {
+    [TKey in keyof TItems]: DefaultValues<TItems[TKey]>;
+} : DefaultValue<TSchema>;
+
+/**
+ * Returns the default values of the schema.
+ *
+ * Hint: The difference to `getDefault` is that for objects and tuples without
+ * an explicit default value, this function recursively returns the default
+ * values of the subschemas instead of `undefined`.
+ *
+ * @param schema The schema to get the default values from.
+ *
+ * @returns The default values.
+ */
+declare function getDefaults<TSchema extends SchemaWithMaybeDefault<BaseSchema | ObjectSchema<ObjectEntries, any> | TupleSchema<TupleItems, any>>>(schema: TSchema): DefaultValues<TSchema>;
+
+/**
+ * Returns the default values of the schema.
+ *
+ * The difference to `getDefaultAsync` is that for objects and tuples without
+ * an explicit default value, this function recursively returns the default
+ * values of the subschemas instead of `undefined`.
+ *
+ * @param schema The schema to get the default values from.
+ *
+ * @returns The default values.
+ */
+declare function getDefaultsAsync<TSchema extends SchemaWithMaybeDefault<BaseSchema | ObjectSchema<ObjectEntries, any> | TupleSchema<TupleItems, any>> | SchemaWithMaybeDefaultAsync<BaseSchemaAsync | ObjectSchemaAsync<ObjectEntriesAsync, any> | TupleSchemaAsync<TupleItemsAsync, any>>>(schema: TSchema): Promise<DefaultValues<TSchema>>;
+
+/**
+ * Schema with maybe fallback async type.
+ */
+type SchemaWithMaybeFallbackAsync<TSchema extends BaseSchemaAsync = BaseSchemaAsync> = TSchema & {
+    /**
+     * The optional fallback value.
+     */
+    fallback?: Output<TSchema> | ((info?: FallbackInfo) => Output<TSchema> | Promise<Output<TSchema>>);
+};
+/**
+ * Returns the fallback value of the schema.
+ *
+ * @param schema The schema to get the fallback value from.
+ * @param info The fallback info.
+ *
+ * @returns The fallback value.
+ */
+declare function getFallbackAsync<TSchema extends SchemaWithMaybeFallback | SchemaWithMaybeFallbackAsync>(schema: TSchema, info?: FallbackInfo): Promise<FallbackValue<TSchema>>;
+
+/**
+ * Fallback value type.
+ */
+type FallbackValue<TSchema extends SchemaWithMaybeFallback | SchemaWithMaybeFallbackAsync> = TSchema['fallback'] extends Output<TSchema> ? TSchema['fallback'] : TSchema['fallback'] extends () => Output<TSchema> ? ReturnType<TSchema['fallback']> : TSchema['fallback'] extends () => Promise<Output<TSchema>> ? Awaited<ReturnType<TSchema['fallback']>> : undefined;
+
+/**
+ * Schema with maybe fallback type.
+ */
+type SchemaWithMaybeFallback<TSchema extends BaseSchema = BaseSchema> = TSchema & {
+    /**
+     * The optional fallback value.
+     */
+    fallback?: Output<TSchema> | ((info?: FallbackInfo) => Output<TSchema>);
+};
+/**
+ * Returns the fallback value of the schema.
+ *
+ * @param schema The schema to get the fallback value from.
+ * @param info The fallback info.
+ *
+ * @returns The fallback value.
+ */
+declare function getFallback<TSchema extends SchemaWithMaybeFallback>(schema: TSchema, info?: FallbackInfo): FallbackValue<TSchema>;
+
+/**
+ * Fallback values type.
+ */
+type FallbackValues<TSchema extends SchemaWithMaybeFallback<BaseSchema | ObjectSchema<ObjectEntries, any> | TupleSchema<TupleItems, any>> | SchemaWithMaybeFallbackAsync<BaseSchemaAsync | ObjectSchemaAsync<ObjectEntriesAsync, any> | TupleSchemaAsync<TupleItemsAsync, any>>> = TSchema extends ObjectSchema<infer TEntries extends ObjectEntries> ? {
+    [TKey in keyof TEntries]: FallbackValues<TEntries[TKey]>;
+} : TSchema extends ObjectSchemaAsync<infer TEntries extends ObjectEntriesAsync> ? {
+    [TKey in keyof TEntries]: FallbackValues<TEntries[TKey]>;
+} : TSchema extends TupleSchema<infer TItems> ? {
+    [TKey in keyof TItems]: FallbackValues<TItems[TKey]>;
+} : TSchema extends TupleSchemaAsync<infer TItems> ? {
+    [TKey in keyof TItems]: FallbackValues<TItems[TKey]>;
+} : FallbackValue<TSchema>;
+
+/**
+ * Returns the fallback values of the schema.
+ *
+ * Hint: The difference to `getFallback` is that for objects and tuples without
+ * an explicit fallback value, this function recursively returns the fallback
+ * values of the subschemas instead of `undefined`.
+ *
+ * @param schema The schema to get the fallback values from.
+ *
+ * @returns The fallback values.
+ */
+declare function getFallbacks<TSchema extends SchemaWithMaybeFallback<BaseSchema | ObjectSchema<ObjectEntries, any> | TupleSchema<TupleItems, any>>>(schema: TSchema): FallbackValues<TSchema>;
+
+/**
+ * Returns the fallback values of the schema.
+ *
+ * Hint: The difference to `getFallbackAsync` is that for objects and tuples
+ * without an explicit fallback value, this function recursively returns the
+ * fallback values of the subschemas instead of `undefined`.
+ *
+ * @param schema The schema to get the fallback values from.
+ *
+ * @returns The fallback values.
+ */
+declare function getFallbacksAsync<TSchema extends SchemaWithMaybeFallback<BaseSchema | ObjectSchema<ObjectEntries, any> | TupleSchema<TupleItems, any>> | SchemaWithMaybeFallbackAsync<BaseSchemaAsync | ObjectSchemaAsync<ObjectEntriesAsync, any> | TupleSchemaAsync<TupleItemsAsync, any>>>(schema: TSchema): Promise<FallbackValues<TSchema>>;
+
+/**
+ * Checks if the input matches the scheme. By using a type predicate, this
+ * function can be used as a type guard.
+ *
+ * @param schema The schema to be used.
+ * @param input The input to be tested.
+ * @param info The optional parse info.
+ *
+ * @returns Whether the input matches the scheme.
+ */
+declare function is<TSchema extends BaseSchema>(schema: TSchema, input: unknown, info?: Pick<ParseInfo, 'skipPipe'>): input is Input<TSchema>;
+
+/**
+ * Converts union to intersection types.
+ */
+type UnionToIntersection<T> = (T extends never ? never : (arg: T) => never) extends (arg: infer U) => never ? U : never;
+/**
+ * Converts union to tuple types.
+ */
+type UnionToTuple<T> = UnionToIntersection<T extends never ? never : () => T> extends () => infer W ? [...UnionToTuple<Exclude<T, W>>, W] : [];
+/**
+ * Returns a tuple or never type.
+ */
+type TupleOrNever<T> = T extends [string, ...string[]] ? T : never;
+/**
+ * Creates a enum schema of object keys.
+ *
+ * @param schema The object schema.
+ *
+ * @returns A enum schema.
+ */
+declare function keyof<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>>(schema: TSchema): PicklistSchema<TupleOrNever<UnionToTuple<keyof TSchema['entries']>>>;
+
+/**
+ * Merges objects types.
+ */
+type MergeObjects<TSchemas extends (ObjectSchema<any, any> | ObjectSchemaAsync<any, any>)[]> = TSchemas extends [infer TFirstSchema] ? TFirstSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any> ? TFirstSchema['entries'] : never : TSchemas extends [infer TFirstSchema, ...infer TRestSchemas] ? TFirstSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any> ? TRestSchemas extends (ObjectSchema<any, any> | ObjectSchemaAsync<any, any>)[] ? {
+    [TKey in Exclude<keyof TFirstSchema['entries'], keyof MergeObjects<TRestSchemas>>]: TFirstSchema['entries'][TKey];
+} & MergeObjects<TRestSchemas> : never : never : never;
+
+/**
+ * Object schemas type.
+ */
+type ObjectSchemas$1 = [
+    ObjectSchema<any, any>,
+    ObjectSchema<any, any>,
+    ...ObjectSchema<any, any>[]
+];
+/**
+ * Merges the entries of multiple object schemas. Subsequent object entries
+ * overwrite the previous ones.
+ *
+ * @param schemas The schemas to be merged.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function merge<TSchemas extends ObjectSchemas$1>(schemas: TSchemas, pipe?: Pipe<ObjectOutput<MergeObjects<TSchemas>, undefined>>): ObjectSchema<MergeObjects<TSchemas>>;
+/**
+ * Merges the entries of multiple object schemas. Subsequent object entries
+ * overwrite the previous ones.
+ *
+ * @param schemas The schemas to be merged.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function merge<TSchemas extends ObjectSchemas$1>(schemas: TSchemas, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<MergeObjects<TSchemas>, undefined>>): ObjectSchema<MergeObjects<TSchemas>>;
+/**
+ * Merges the entries of multiple object schemas. Subsequent object entries
+ * overwrite the previous ones.
+ *
+ * @param schemas The schemas to be merged.
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function merge<TSchemas extends ObjectSchemas$1, TRest extends BaseSchema | undefined>(schemas: TSchemas, rest: TRest, pipe?: Pipe<ObjectOutput<MergeObjects<TSchemas>, TRest>>): ObjectSchema<MergeObjects<TSchemas>, TRest>;
+/**
+ * Merges the entries of multiple object schemas. Subsequent object entries
+ * overwrite the previous ones.
+ *
+ * @param schemas The schemas to be merged.
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function merge<TSchemas extends ObjectSchemas$1, TRest extends BaseSchema | undefined>(schemas: TSchemas, rest: TRest, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<MergeObjects<TSchemas>, TRest>>): ObjectSchema<MergeObjects<TSchemas>, TRest>;
+
+/**
+ * Object schemas type.
+ */
+type ObjectSchemas = [
+    ObjectSchema<any, any> | ObjectSchemaAsync<any, any>,
+    ObjectSchema<any, any> | ObjectSchemaAsync<any, any>,
+    ...(ObjectSchema<any, any> | ObjectSchemaAsync<any, any>)[]
+];
+/**
+ * Merges the entries of multiple async object schemas. Subsequent object
+ * entries overwrite the previous ones.
+ *
+ * @param schemas The schemas to be merged.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function mergeAsync<TSchemas extends ObjectSchemas>(schemas: TSchemas, pipe?: PipeAsync<ObjectOutput<MergeObjects<TSchemas>, undefined>>): ObjectSchemaAsync<MergeObjects<TSchemas>>;
+/**
+ * Merges the entries of multiple async object schemas. Subsequent object
+ * entries overwrite the previous ones.
+ *
+ * @param schemas The schemas to be merged.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function mergeAsync<TSchemas extends ObjectSchemas>(schemas: TSchemas, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<MergeObjects<TSchemas>, undefined>>): ObjectSchemaAsync<MergeObjects<TSchemas>>;
+/**
+ * Merges the entries of multiple async object schemas. Subsequent object
+ * entries overwrite the previous ones.
+ *
+ * @param schemas The schemas to be merged.
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function mergeAsync<TSchemas extends ObjectSchemas, TRest extends BaseSchema | BaseSchemaAsync | undefined>(schemas: TSchemas, rest: TRest, pipe?: PipeAsync<ObjectOutput<MergeObjects<TSchemas>, TRest>>): ObjectSchemaAsync<MergeObjects<TSchemas>, TRest>;
+/**
+ * Merges the entries of multiple async object schemas. Subsequent object
+ * entries overwrite the previous ones.
+ *
+ * @param schemas The schemas to be merged.
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function mergeAsync<TSchemas extends ObjectSchemas, TRest extends BaseSchema | BaseSchemaAsync | undefined>(schemas: TSchemas, rest: TRest, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<MergeObjects<TSchemas>, TRest>>): ObjectSchemaAsync<MergeObjects<TSchemas>, TRest>;
+
+/**
+ * Object keys type.
+ */
+type ObjectKeys<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>> = [keyof TSchema['entries'], ...(keyof TSchema['entries'])[]];
+
+/**
+ * Creates an object schema that contains not the selected keys of an existing
+ * schema.
+ *
+ * @param schema The schema to omit from.
+ * @param keys The selected keys
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function omit<TSchema extends ObjectSchema<any, any>, TKeys extends ObjectKeys<TSchema>>(schema: TSchema, keys: TKeys, pipe?: Pipe<ObjectOutput<Omit<TSchema['entries'], TKeys[number]>, undefined>>): ObjectSchema<Omit<TSchema['entries'], TKeys[number]>>;
+/**
+ * Creates an object schema that contains not the selected keys of an existing
+ * schema.
+ *
+ * @param schema The schema to omit from.
+ * @param keys The selected keys
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function omit<TSchema extends ObjectSchema<any, any>, TKeys extends ObjectKeys<TSchema>>(schema: TSchema, keys: TKeys, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<Omit<TSchema['entries'], TKeys[number]>, undefined>>): ObjectSchema<Omit<TSchema['entries'], TKeys[number]>>;
+/**
+ * Creates an object schema that contains not the selected keys of an existing
+ * schema.
+ *
+ * @param schema The schema to omit from.
+ * @param keys The selected keys
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function omit<TSchema extends ObjectSchema<any, any>, TKeys extends ObjectKeys<TSchema>, TRest extends BaseSchema | undefined>(schema: TSchema, keys: TKeys, rest: TRest, pipe?: Pipe<ObjectOutput<Omit<TSchema['entries'], TKeys[number]>, TRest>>): ObjectSchema<Omit<TSchema['entries'], TKeys[number]>, TRest>;
+/**
+ * Creates an object schema that contains not the selected keys of an existing
+ * schema.
+ *
+ * @param schema The schema to omit from.
+ * @param keys The selected keys
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function omit<TSchema extends ObjectSchema<any, any>, TKeys extends ObjectKeys<TSchema>, TRest extends BaseSchema | undefined>(schema: TSchema, keys: TKeys, rest: TRest, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<Omit<TSchema['entries'], TKeys[number]>, TRest>>): ObjectSchema<Omit<TSchema['entries'], TKeys[number]>, TRest>;
+
+/**
+ * Creates an async object schema that contains only the selected keys of an
+ * existing schema.
+ *
+ * @param schema The schema to omit from.
+ * @param keys The selected keys
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function omitAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TKeys extends ObjectKeys<TSchema>>(schema: TSchema, keys: TKeys, pipe?: PipeAsync<ObjectOutput<Omit<TSchema['entries'], TKeys[number]>, undefined>>): ObjectSchemaAsync<Omit<TSchema['entries'], TKeys[number]>>;
+/**
+ * Creates an async object schema that contains only the selected keys of an
+ * existing schema.
+ *
+ * @param schema The schema to omit from.
+ * @param keys The selected keys
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function omitAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TKeys extends ObjectKeys<TSchema>>(schema: TSchema, keys: TKeys, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<Omit<TSchema['entries'], TKeys[number]>, undefined>>): ObjectSchemaAsync<Omit<TSchema['entries'], TKeys[number]>>;
+/**
+ * Creates an async object schema that contains only the selected keys of an
+ * existing schema.
+ *
+ * @param schema The schema to omit from.
+ * @param keys The selected keys
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function omitAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TKeys extends ObjectKeys<TSchema>, TRest extends BaseSchema | BaseSchemaAsync | undefined>(schema: TSchema, keys: TKeys, rest: TRest, pipe?: PipeAsync<ObjectOutput<Omit<TSchema['entries'], TKeys[number]>, TRest>>): ObjectSchemaAsync<Omit<TSchema['entries'], TKeys[number]>, TRest>;
+/**
+ * Creates an async object schema that contains only the selected keys of an
+ * existing schema.
+ *
+ * @param schema The schema to omit from.
+ * @param keys The selected keys
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function omitAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TKeys extends ObjectKeys<TSchema>, TRest extends BaseSchema | BaseSchemaAsync | undefined>(schema: TSchema, keys: TKeys, rest: TRest, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<Omit<TSchema['entries'], TKeys[number]>, TRest>>): ObjectSchemaAsync<Omit<TSchema['entries'], TKeys[number]>, TRest>;
+
+/**
+ * Parses unknown input based on a schema.
+ *
+ * @param schema The schema to be used.
+ * @param input The input to be parsed.
+ * @param info The optional parse info.
+ *
+ * @returns The parsed output.
+ */
+declare function parse<TSchema extends BaseSchema>(schema: TSchema, input: unknown, info?: Pick<ParseInfo, 'abortEarly' | 'abortPipeEarly' | 'skipPipe'>): Output<TSchema>;
+
+/**
+ * Parses unknown input based on a schema.
+ *
+ * @param schema The schema to be used.
+ * @param input The input to be parsed.
+ * @param info The optional parse info.
+ *
+ * @returns The parsed output.
+ */
+declare function parseAsync<TSchema extends BaseSchema | BaseSchemaAsync>(schema: TSchema, input: unknown, info?: Pick<ParseInfo, 'abortEarly' | 'abortPipeEarly' | 'skipPipe'>): Promise<Output<TSchema>>;
+
+/**
+ * Partial object entries type.
+ */
+type PartialObjectEntries<TEntries extends ObjectEntries> = {
+    [TKey in keyof TEntries]: OptionalSchema<TEntries[TKey]>;
+};
+/**
+ * Creates an object schema consisting of all properties of an existing object
+ * schema set to optional.
+ *
+ * @param schema The affected schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function partial<TSchema extends ObjectSchema<any, any>>(schema: TSchema, pipe?: Pipe<ObjectOutput<PartialObjectEntries<TSchema['entries']>, undefined>>): ObjectSchema<PartialObjectEntries<TSchema['entries']>>;
+/**
+ * Creates an object schema consisting of all properties of an existing object
+ * schema set to optional.
+ *
+ * @param schema The affected schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function partial<TSchema extends ObjectSchema<any, any>>(schema: TSchema, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<PartialObjectEntries<TSchema['entries']>, undefined>>): ObjectSchema<PartialObjectEntries<TSchema['entries']>>;
+/**
+ * Creates an object schema consisting of all properties of an existing object
+ * schema set to optional.
+ *
+ * @param schema The affected schema.
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function partial<TSchema extends ObjectSchema<any, any>, TRest extends BaseSchema | undefined>(schema: TSchema, rest: TRest, pipe?: Pipe<ObjectOutput<PartialObjectEntries<TSchema['entries']>, TRest>>): ObjectSchema<PartialObjectEntries<TSchema['entries']>, TRest>;
+/**
+ * Creates an object schema consisting of all properties of an existing object
+ * schema set to optional.
+ *
+ * @param schema The affected schema.
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function partial<TSchema extends ObjectSchema<any, any>, TRest extends BaseSchema | undefined>(schema: TSchema, rest: TRest, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<PartialObjectEntries<TSchema['entries']>, TRest>>): ObjectSchema<PartialObjectEntries<TSchema['entries']>, TRest>;
+
+/**
+ * Partial object entries async type.
+ */
+type PartialObjectEntriesAsync<TEntries extends ObjectEntriesAsync> = {
+    [TKey in keyof TEntries]: OptionalSchemaAsync<TEntries[TKey]>;
+};
+/**
+ * Creates an async object schema consisting of all properties of an existing
+ * object schema set to optional.
+ *
+ * @param schema The affected schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function partialAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>>(schema: TSchema, pipe?: PipeAsync<ObjectOutput<PartialObjectEntriesAsync<TSchema['entries']>, undefined>>): ObjectSchemaAsync<PartialObjectEntriesAsync<TSchema['entries']>>;
+/**
+ * Creates an async object schema consisting of all properties of an existing
+ * object schema set to optional.
+ *
+ * @param schema The affected schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function partialAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>>(schema: TSchema, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<PartialObjectEntriesAsync<TSchema['entries']>, undefined>>): ObjectSchemaAsync<PartialObjectEntriesAsync<TSchema['entries']>>;
+/**
+ * Creates an async object schema consisting of all properties of an existing
+ * object schema set to optional.
+ *
+ * @param schema The affected schema.
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function partialAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TRest extends BaseSchema | undefined>(schema: TSchema, rest: TRest, pipe?: PipeAsync<ObjectOutput<PartialObjectEntriesAsync<TSchema['entries']>, TRest>>): ObjectSchemaAsync<PartialObjectEntriesAsync<TSchema['entries']>, TRest>;
+/**
+ * Creates an async object schema consisting of all properties of an existing
+ * object schema set to optional.
+ *
+ * @param schema The affected schema.
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function partialAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TRest extends BaseSchema | undefined>(schema: TSchema, rest: TRest, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<PartialObjectEntriesAsync<TSchema['entries']>, TRest>>): ObjectSchemaAsync<PartialObjectEntriesAsync<TSchema['entries']>, TRest>;
+
+/**
+ * Creates an object schema that passes unknown keys.
+ *
+ * @deprecated Use `object` with `rest` argument instead.
+ *
+ * @param schema A object schema.
+ *
+ * @returns A object schema.
+ */
+declare function passthrough<TSchema extends ObjectSchema<ObjectEntries, undefined>>(schema: TSchema): TSchema;
+
+/**
+ * Creates an object schema that passes unknown keys.
+ *
+ * @deprecated Use `objectAsync` with `rest` argument instead.
+ *
+ * @param schema A object schema.
+ *
+ * @returns A object schema.
+ */
+declare function passthroughAsync<TSchema extends ObjectSchemaAsync<ObjectEntriesAsync, undefined>>(schema: TSchema): TSchema;
+
+/**
+ * Creates an object schema that contains only the selected keys of an existing
+ * schema.
+ *
+ * @param schema The schema to pick from.
+ * @param keys The selected keys
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function pick<TSchema extends ObjectSchema<any, any>, TKeys extends (keyof TSchema['entries'])[]>(schema: TSchema, keys: TKeys, pipe?: Pipe<ObjectOutput<Pick<TSchema['entries'], TKeys[number]>, undefined>>): ObjectSchema<Pick<TSchema['entries'], TKeys[number]>>;
+/**
+ * Creates an object schema that contains only the selected keys of an existing
+ * schema.
+ *
+ * @param schema The schema to pick from.
+ * @param keys The selected keys
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function pick<TSchema extends ObjectSchema<any, any>, TKeys extends (keyof TSchema['entries'])[]>(schema: TSchema, keys: TKeys, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<Pick<TSchema['entries'], TKeys[number]>, undefined>>): ObjectSchema<Pick<TSchema['entries'], TKeys[number]>>;
+/**
+ * Creates an object schema that contains only the selected keys of an existing
+ * schema.
+ *
+ * @param schema The schema to pick from.
+ * @param keys The selected keys
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function pick<TSchema extends ObjectSchema<any, any>, TKeys extends (keyof TSchema['entries'])[], TRest extends BaseSchema | undefined>(schema: TSchema, keys: TKeys, rest: TRest, pipe?: Pipe<ObjectOutput<Pick<TSchema['entries'], TKeys[number]>, TRest>>): ObjectSchema<Pick<TSchema['entries'], TKeys[number]>, TRest>;
+/**
+ * Creates an object schema that contains only the selected keys of an existing
+ * schema.
+ *
+ * @param schema The schema to pick from.
+ * @param keys The selected keys
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function pick<TSchema extends ObjectSchema<any, any>, TKeys extends (keyof TSchema['entries'])[], TRest extends BaseSchema | undefined>(schema: TSchema, keys: TKeys, rest: TRest, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<Pick<TSchema['entries'], TKeys[number]>, TRest>>): ObjectSchema<Pick<TSchema['entries'], TKeys[number]>, TRest>;
+
+/**
+ * Creates an async object schema that contains only the selected keys of an
+ * existing schema.
+ *
+ * @param schema The schema to pick from.
+ * @param keys The selected keys
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function pickAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TKeys extends (keyof TSchema['entries'])[]>(schema: TSchema, keys: TKeys, pipe?: PipeAsync<ObjectOutput<Pick<TSchema['entries'], TKeys[number]>, undefined>>): ObjectSchemaAsync<Pick<TSchema['entries'], TKeys[number]>>;
+/**
+ * Creates an async object schema that contains only the selected keys of an
+ * existing schema.
+ *
+ * @param schema The schema to pick from.
+ * @param keys The selected keys
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function pickAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TKeys extends (keyof TSchema['entries'])[]>(schema: TSchema, keys: TKeys, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<Pick<TSchema['entries'], TKeys[number]>, undefined>>): ObjectSchemaAsync<Pick<TSchema['entries'], TKeys[number]>>;
+/**
+ * Creates an async object schema that contains only the selected keys of an
+ * existing schema.
+ *
+ * @param schema The schema to pick from.
+ * @param keys The selected keys
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function pickAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TKeys extends (keyof TSchema['entries'])[], TRest extends BaseSchema | BaseSchemaAsync | undefined>(schema: TSchema, keys: TKeys, rest: TRest, pipe?: PipeAsync<ObjectOutput<Pick<TSchema['entries'], TKeys[number]>, TRest>>): ObjectSchemaAsync<Pick<TSchema['entries'], TKeys[number]>, TRest>;
+/**
+ * Creates an async object schema that contains only the selected keys of an
+ * existing schema.
+ *
+ * @param schema The schema to pick from.
+ * @param keys The selected keys
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function pickAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TKeys extends (keyof TSchema['entries'])[], TRest extends BaseSchema | BaseSchemaAsync | undefined>(schema: TSchema, keys: TKeys, rest: TRest, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<Pick<TSchema['entries'], TKeys[number]>, TRest>>): ObjectSchemaAsync<Pick<TSchema['entries'], TKeys[number]>, TRest>;
+
+/**
+ * Required object schema type.
+ */
+type Required$1<TEntries extends ObjectEntries> = {
+    [TKey in keyof TEntries]: NonOptionalSchema<TEntries[TKey]>;
+};
+/**
+ * Creates an object schema consisting of all properties of an existing object
+ * schema set to none optional.
+ *
+ * @param schema The affected schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function required<TSchema extends ObjectSchema<any, any>>(schema: TSchema, pipe?: Pipe<ObjectOutput<Required$1<TSchema['entries']>, undefined>>): ObjectSchema<Required$1<TSchema['entries']>>;
+/**
+ * Creates an object schema consisting of all properties of an existing object
+ * schema set to none optional.
+ *
+ * @param schema The affected schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function required<TSchema extends ObjectSchema<any, any>>(schema: TSchema, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<Required$1<TSchema['entries']>, undefined>>): ObjectSchema<Required$1<TSchema['entries']>>;
+/**
+ * Creates an object schema consisting of all properties of an existing object
+ * schema set to none optional.
+ *
+ * @param schema The affected schema.
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function required<TSchema extends ObjectSchema<any, any>, TRest extends BaseSchema | undefined>(schema: TSchema, rest: TRest, pipe?: Pipe<ObjectOutput<Required$1<TSchema['entries']>, TRest>>): ObjectSchema<Required$1<TSchema['entries']>, TRest>;
+/**
+ * Creates an object schema consisting of all properties of an existing object
+ * schema set to none optional.
+ *
+ * @param schema The affected schema.
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An object schema.
+ */
+declare function required<TSchema extends ObjectSchema<any, any>, TRest extends BaseSchema | undefined>(schema: TSchema, rest: TRest, message?: ErrorMessage, pipe?: Pipe<ObjectOutput<Required$1<TSchema['entries']>, TRest>>): ObjectSchema<Required$1<TSchema['entries']>, TRest>;
+
+/**
+ * Required object schema type.
+ */
+type Required<TEntries extends ObjectEntriesAsync> = {
+    [TKey in keyof TEntries]: NonOptionalSchemaAsync<TEntries[TKey]>;
+};
+/**
+ * Creates an async object schema consisting of all properties of an existing
+ * object schema set to none optional.
+ *
+ * @param schema The affected schema.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function requiredAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>>(schema: TSchema, pipe?: PipeAsync<ObjectOutput<Required<TSchema['entries']>, undefined>>): ObjectSchemaAsync<Required<TSchema['entries']>>;
+/**
+ * Creates an async object schema consisting of all properties of an existing
+ * object schema set to none optional.
+ *
+ * @param schema The affected schema.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function requiredAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>>(schema: TSchema, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<Required<TSchema['entries']>, undefined>>): ObjectSchemaAsync<Required<TSchema['entries']>>;
+/**
+ * Creates an async object schema consisting of all properties of an existing
+ * object schema set to none optional.
+ *
+ * @param schema The affected schema.
+ * @param rest The object rest.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function requiredAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TRest extends BaseSchema | BaseSchemaAsync | undefined>(schema: TSchema, rest: TRest, pipe?: PipeAsync<ObjectOutput<Required<TSchema['entries']>, TRest>>): ObjectSchemaAsync<Required<TSchema['entries']>, TRest>;
+/**
+ * Creates an async object schema consisting of all properties of an existing
+ * object schema set to none optional.
+ *
+ * @param schema The affected schema.
+ * @param rest The object rest.
+ * @param message The error message.
+ * @param pipe A validation and transformation pipe.
+ *
+ * @returns An async object schema.
+ */
+declare function requiredAsync<TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>, TRest extends BaseSchema | BaseSchemaAsync | undefined>(schema: TSchema, rest: TRest, message?: ErrorMessage, pipe?: PipeAsync<ObjectOutput<Required<TSchema['entries']>, TRest>>): ObjectSchemaAsync<Required<TSchema['entries']>, TRest>;
+
+/**
+ * Safe parse result type.
+ */
+type SafeParseResult<TSchema extends BaseSchema | BaseSchemaAsync> = {
+    typed: true;
+    success: true;
+    /**
+     * @deprecated Please use `.output` instead.
+     */
+    data: Output<TSchema>;
+    output: Output<TSchema>;
+    /**
+     * @deprecated Please use `.issues` instead.
+     */
+    error: undefined;
+    issues: undefined;
+} | {
+    typed: true;
+    success: false;
+    /**
+     * @deprecated Please use `.output` instead.
+     */
+    data: Output<TSchema>;
+    output: Output<TSchema>;
+    /**
+     * @deprecated Please use `.issues` instead.
+     */
+    error: ValiError;
+    issues: Issues;
+} | {
+    typed: false;
+    success: false;
+    /**
+     * @deprecated Please use `.output` instead.
+     */
+    data: unknown;
+    output: unknown;
+    /**
+     * @deprecated Please use `.issues` instead.
+     */
+    error: ValiError;
+    issues: Issues;
+};
+
+/**
+ * Parses unknown input based on a schema.
+ *
+ * @param schema The schema to be used.
+ * @param input The input to be parsed.
+ * @param info The optional parse info.
+ *
+ * @returns The parsed output.
+ */
+declare function safeParse<TSchema extends BaseSchema>(schema: TSchema, input: unknown, info?: Pick<ParseInfo, 'abortEarly' | 'abortPipeEarly' | 'skipPipe'>): SafeParseResult<TSchema>;
+
+/**
+ * Parses unknown input based on a schema.
+ *
+ * @param schema The schema to be used.
+ * @param input The input to be parsed.
+ * @param info The optional parse info.
+ *
+ * @returns The parsed output.
+ */
+declare function safeParseAsync<TSchema extends BaseSchema | BaseSchemaAsync>(schema: TSchema, input: unknown, info?: Pick<ParseInfo, 'abortEarly' | 'abortPipeEarly' | 'skipPipe'>): Promise<SafeParseResult<TSchema>>;
+
+/**
+ * Creates a strict object schema that throws an error if an input contains
+ * unknown keys.
+ *
+ * @deprecated Use `object` with `rest` argument instead.
+ *
+ * @param schema A object schema.
+ * @param message The error message.
+ *
+ * @returns A strict object schema.
+ */
+declare function strict<TSchema extends ObjectSchema<ObjectEntries, undefined>>(schema: TSchema, message?: ErrorMessage): TSchema;
+
+/**
+ * Creates a strict async object schema that throws an error if an input
+ * contains unknown keys.
+ *
+ * @deprecated Use `objectAsync` with `rest` argument instead.
+ *
+ * @param schema A object schema.
+ * @param message The error message.
+ *
+ * @returns A strict object schema.
+ */
+declare function strictAsync<TSchema extends ObjectSchemaAsync<ObjectEntriesAsync, undefined>>(schema: TSchema, message?: ErrorMessage): TSchema;
+
+/**
+ * Creates an object schema that strips unknown keys.
+ *
+ * @deprecated Use `object` without `rest` argument instead.
+ *
+ * @param schema A object schema.
+ *
+ * @returns A object schema.
+ */
+declare function strip<TSchema extends ObjectSchema<ObjectEntries, undefined>>(schema: TSchema): TSchema;
+
+/**
+ * Creates an object schema that strips unknown keys.
+ *
+ * @deprecated Use `objectAsync` without `rest` argument instead.
+ *
+ * @param schema A object schema.
+ *
+ * @returns A object schema.
+ */
+declare function stripAsync<TSchema extends ObjectSchemaAsync<ObjectEntriesAsync, undefined>>(schema: TSchema): TSchema;
+
+type TransformInfo = {
+    issues: Issues | undefined;
+};
+
+/**
+ * Schema with transform type.
+ */
+type SchemaWithTransform<TSchema extends BaseSchema, TOutput> = Omit<TSchema, '_types'> & {
+    _types?: {
+        input: Input<TSchema>;
+        output: TOutput;
+    };
+};
+/**
+ * Adds a transformation step to a schema, which is executed at the end of
+ * parsing and can change the output type.
+ *
+ * @param schema The schema to be used.
+ * @param action The transformation action.
+ * @param pipe A validation pipe.
+ *
+ * @returns A transformed schema.
+ */
+declare function transform<TSchema extends BaseSchema, TOutput>(schema: TSchema, action: (value: Output<TSchema>, info: TransformInfo) => TOutput, pipe?: Pipe<TOutput>): SchemaWithTransform<TSchema, TOutput>;
+/**
+ * Adds a transformation step to a schema, which is executed at the end of
+ * parsing and can change the output type.
+ *
+ * @param schema The schema to be used.
+ * @param action The transformation action.
+ * @param validate A validation schema.
+ *
+ * @returns A transformed schema.
+ */
+declare function transform<TSchema extends BaseSchema, TOutput>(schema: TSchema, action: (value: Output<TSchema>, info: TransformInfo) => TOutput, validate?: BaseSchema<TOutput>): SchemaWithTransform<TSchema, TOutput>;
+
+/**
+ * Schema with transform async type.
+ */
+type SchemaWithTransformAsync<TSchema extends BaseSchema | BaseSchemaAsync, TOutput> = Omit<TSchema, 'async' | '_parse' | '_types'> & {
+    async: true;
+    _parse(input: unknown, info?: ParseInfo): Promise<SchemaResult<TOutput>>;
+    _types?: {
+        input: Input<TSchema>;
+        output: TOutput;
+    };
+};
+/**
+ * Adds an async transformation step to a schema, which is executed at the end
+ * of parsing and can change the output type.
+ *
+ * @param schema The schema to be used.
+ * @param action The transformation action.
+ * @param pipe A validation pipe.
+ *
+ * @returns A transformed schema.
+ */
+declare function transformAsync<TSchema extends BaseSchema | BaseSchemaAsync, TOutput>(schema: TSchema, action: (value: Output<TSchema>, info: TransformInfo) => TOutput | Promise<TOutput>, pipe?: PipeAsync<TOutput>): SchemaWithTransformAsync<TSchema, TOutput>;
+/**
+ * Adds an async transformation step to a schema, which is executed at the end
+ * of parsing and can change the output type.
+ *
+ * @param schema The schema to be used.
+ * @param action The transformation action.
+ * @param validate A validation schema.
+ *
+ * @returns A transformed schema.
+ */
+declare function transformAsync<TSchema extends BaseSchema | BaseSchemaAsync, TOutput>(schema: TSchema, action: (value: Output<TSchema>, info: TransformInfo) => TOutput | Promise<TOutput>, validate?: BaseSchema<TOutput> | BaseSchemaAsync<TOutput>): SchemaWithTransformAsync<TSchema, TOutput>;
+
+/**
+ * Unwraps the wrapped schema.
+ *
+ * @param schema The schema to be unwrapped.
+ *
+ * @returns The unwrapped schema.
+ */
+declare function unwrap<TSchema extends OptionalSchema<any, any> | OptionalSchemaAsync<any, any> | NullableSchema<any, any> | NullableSchemaAsync<any, any> | NullishSchema<any, any> | NullishSchemaAsync<any, any> | NonOptionalSchema<any> | NonOptionalSchemaAsync<any> | NonNullableSchema<any> | NonNullableSchemaAsync<any> | NonNullishSchema<any> | NonNullishSchemaAsync<any>>(schema: TSchema): TSchema['wrapped'];
+
+/**
+ * Passes a default value to a schema in case of an undefined input.
+ *
+ * @deprecated Use `optional` instead.
+ *
+ * @param schema The affected schema.
+ * @param value The default value.
+ *
+ * @returns The passed schema.
+ */
+declare function withDefault<TSchema extends BaseSchema | BaseSchemaAsync>(schema: TSchema, value: Input<TSchema> | (() => Input<TSchema>)): TSchema;
+/**
+ * See {@link withDefault}
+ *
+ * @deprecated Use `optional` instead.
+ */
+declare const useDefault: typeof withDefault;
+
+/**
+ * [BIC] (https://en.wikipedia.org/wiki/ISO_9362) regex.
+ */
+declare const BIC_REGEX: RegExp;
+/**
+ * [Cuid2](https://github.com/paralleldrive/cuid2) regex.
+ */
+declare const CUID2_REGEX: RegExp;
+/**
+ * [Decimal](https://en.wikipedia.org/wiki/Decimal) regex.
+ */
+declare const DECIMAL_REGEX: RegExp;
+/**
+ * Email regex.
+ */
+declare const EMAIL_REGEX: RegExp;
+/**
+ * Emoji regex.
+ */
+declare const EMOJI_REGEX: RegExp;
+/**
+ * [Hexadecimal](https://en.wikipedia.org/wiki/Hexadecimal) regex.
+ */
+declare const HEXADECIMAL_REGEX: RegExp;
+/**
+ * [Hex color](https://en.wikipedia.org/wiki/Web_colors#Hex_triplet) regex.
+ */
+declare const HEX_COLOR_REGEX: RegExp;
+/**
+ * [IMEI](https://en.wikipedia.org/wiki/International_Mobile_Equipment_Identity) regex.
+ */
+declare const IMEI_REGEX: RegExp;
+/**
+ * [IPv4](https://en.wikipedia.org/wiki/IPv4) regex.
+ */
+declare const IPV4_REGEX: RegExp;
+/**
+ * [IPv6](https://en.wikipedia.org/wiki/IPv6) regex.
+ */
+declare const IPV6_REGEX: RegExp;
+/**
+ * [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) date regex.
+ */
+declare const ISO_DATE_REGEX: RegExp;
+/**
+ * [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) date-time regex.
+ */
+declare const ISO_DATE_TIME_REGEX: RegExp;
+/**
+ * [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) time regex.
+ */
+declare const ISO_TIME_REGEX: RegExp;
+/**
+ * [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) time with seconds regex.
+ */
+declare const ISO_TIME_SECOND_REGEX: RegExp;
+/**
+ * [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp regex.
+ */
+declare const ISO_TIMESTAMP_REGEX: RegExp;
+/**
+ * [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) week regex.
+ */
+declare const ISO_WEEK_REGEX: RegExp;
+/**
+ * [MAC](https://en.wikipedia.org/wiki/MAC_address) 48 bit regex.
+ */
+declare const MAC48_REGEX: RegExp;
+/**
+ * [MAC](https://en.wikipedia.org/wiki/MAC_address) 64 bit regex.
+ */
+declare const MAC64_REGEX: RegExp;
+/**
+ * [Octal](https://en.wikipedia.org/wiki/Octal) regex.
+ */
+declare const OCTAL_REGEX: RegExp;
+/**
+ * [ULID](https://github.com/ulid/spec) regex.
+ */
+declare const ULID_REGEX: RegExp;
+/**
+ * [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) regex.
+ */
+declare const UUID_REGEX: RegExp;
+
+/**
+ * To custom transformation type.
+ */
+type ToCustomTransformation<TInput> = BaseTransformation<TInput> & {
+    /**
+     * The transformation type.
+     */
+    type: 'to_custom';
+};
+/**
+ * Creates a custom pipeline transformation action.
+ *
+ * @param action The transform action.
+ *
+ * @returns A transformation action.
+ */
+declare function toCustom<TInput>(action: (input: TInput) => TInput): ToCustomTransformation<TInput>;
+
+/**
+ * To custom transformation async type.
+ */
+type ToCustomTransformationAsync<TInput> = BaseTransformationAsync<TInput> & {
+    /**
+     * The transformation type.
+     */
+    type: 'to_custom';
+};
+/**
+ * Creates a async custom transformation function.
+ *
+ * @param action The transform action.
+ *
+ * @returns A async transformation function.
+ */
+declare function toCustomAsync<TInput>(action: (input: TInput) => TInput | Promise<TInput>): ToCustomTransformationAsync<TInput>;
+
+/**
+ * To lower case transformation type.
+ */
+type ToLowerCaseTransformation = BaseTransformation<string> & {
+    /**
+     * The transformation type.
+     */
+    type: 'to_lower_case';
+};
+/**
+ * Creates a pipeline transformation action that converts all the alphabetic
+ * characters in a string to lowercase.
+ *
+ * @returns A transformation action.
+ */
+declare function toLowerCase(): ToLowerCaseTransformation;
+
+/**
+ * To max value transformation type.
+ */
+type ToMaxValueTransformation<TInput extends string | number | bigint | Date, TRequirement extends TInput> = BaseTransformation<TInput> & {
+    /**
+     * The transformation type.
+     */
+    type: 'to_max_value';
+    /**
+     * The maximum value.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline transformation action that sets a string, number or date
+ * to a maximum value.
+ *
+ * @param requirement The maximum value.
+ *
+ * @returns A transformation action.
+ */
+declare function toMaxValue<TInput extends string | number | bigint | Date, TRequirement extends TInput>(requirement: TRequirement): ToMaxValueTransformation<TInput, TRequirement>;
+
+/**
+ * To min value transformation type.
+ */
+type ToMinValueTransformation<TInput extends string | number | bigint | Date, TRequirement extends TInput> = BaseTransformation<TInput> & {
+    /**
+     * The transformation type.
+     */
+    type: 'to_min_value';
+    /**
+     * The minium value.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline transformation action that sets a string, number or date
+ * to a minimum value.
+ *
+ * @param requirement The minimum value.
+ *
+ * @returns A transformation action.
+ */
+declare function toMinValue<TInput extends string | number | bigint | Date, TRequirement extends TInput>(requirement: TRequirement): ToMinValueTransformation<TInput, TRequirement>;
+
+/**
+ * To trimmed transformation type.
+ */
+type ToTrimmedTransformation = BaseTransformation<string> & {
+    /**
+     * The transformation type.
+     */
+    type: 'to_trimmed';
+};
+/**
+ * Creates a pipeline transformation action that removes the leading and
+ * trailing white space and line terminator characters from a string.
+ *
+ * @returns A transformation action.
+ */
+declare function toTrimmed(): ToTrimmedTransformation;
+
+/**
+ * To trimmed end transformation type.
+ */
+type ToTrimmedEndTransformation = BaseTransformation<string> & {
+    /**
+     * The transformation type.
+     */
+    type: 'to_trimmed_end';
+};
+/**
+ * Creates a pipeline transformation action that removes the trailing white
+ * space and line terminator characters from a string.
+ *
+ * @returns A transformation action.
+ */
+declare function toTrimmedEnd(): ToTrimmedEndTransformation;
+
+/**
+ * To trimmed start transformation type.
+ */
+type ToTrimmedStartTransformation = BaseTransformation<string> & {
+    /**
+     * The transformation type.
+     */
+    type: 'to_trimmed_start';
+};
+/**
+ * Creates a pipeline transformation action that removes the leading white
+ * space and line terminator characters from a string.
+ *
+ * @returns A transformation action.
+ */
+declare function toTrimmedStart(): ToTrimmedStartTransformation;
+
+/**
+ * To upper case transformation type.
+ */
+type ToUpperCaseTransformation = BaseTransformation<string> & {
+    /**
+     * The transformation type.
+     */
+    type: 'to_upper_case';
+};
+/**
+ * Creates a pipeline transformation action that converts all the alphabetic
+ * characters in a string to uppercase.
+ *
+ * @returns A transformation action.
+ */
+declare function toUpperCase(): ToUpperCaseTransformation;
+
+/**
+ * Returns the pipeline result object with issues.
+ *
+ * @param validation The validation name.
+ * @param message The error message.
+ * @param input The input value.
+ * @param requirement The requirement.
+ * @param path The issue path.
+ *
+ * @returns The pipeline result object.
+ */
+declare function actionIssue(validation: string, message: ErrorMessage, input: unknown, requirement?: unknown, path?: PathItem[]): InvalidActionResult;
+
+/**
+ * Returns the pipeline action output.
+ *
+ * @param output The output value.
+ *
+ * @returns The result object.
+ */
+declare function actionOutput<TOutput>(output: TOutput): ValidActionResult<TOutput>;
+
+/**
+ * Returns message and pipe from dynamic arguments.
+ *
+ * @param arg1 First argument.
+ * @param arg2 Second argument.
+ *
+ * @returns The default arguments.
+ */
+declare function defaultArgs<TPipe extends Pipe<any> | PipeAsync<any>>(arg1: ErrorMessage | TPipe | undefined, arg2: TPipe | undefined): [ErrorMessage | undefined, TPipe | undefined];
+
+/**
+ * Returns the result object with an output.
+ *
+ * @param typed Whether it's typed.
+ * @param output The output value.
+ * @param issues The issues if any.
+ *
+ * @returns The result object.
+ */
+declare function parseResult<TOutput>(typed: true, output: TOutput, issues?: Issues): TypedSchemaResult<TOutput>;
+/**
+ * Returns the result object with an output.
+ *
+ * @param typed Whether it's typed.
+ * @param output The output value.
+ * @param issues The issues.
+ *
+ * @returns The result object.
+ */
+declare function parseResult(typed: false, output: unknown, issues: Issues): UntypedSchemaResult;
+
+/**
+ * Returns rest, error and pipe from dynamic arguments.
+ *
+ * @param arg1 First argument.
+ * @param arg2 Second argument.
+ * @param arg3 Third argument.
+ *
+ * @returns The tuple arguments.
+ */
+declare function restAndDefaultArgs<TRest extends BaseSchema | BaseSchemaAsync | undefined, TPipe extends Pipe<any> | PipeAsync<any>>(arg1: TPipe | ErrorMessage | TRest | undefined, arg2: TPipe | ErrorMessage | undefined, arg3: TPipe | undefined): [TRest, ErrorMessage | undefined, TPipe | undefined];
+
+/**
+ * Checks whether a string with numbers corresponds to the luhn algorithm.
+ *
+ * @param input The input to be checked.
+ *
+ * @returns Whether input is valid.
+ */
+declare function isLuhnAlgo(input: string): boolean;
+
+/**
+ * Executes the validation and transformation pipe.
+ *
+ * @param input The input value.
+ * @param pipe The pipe to be executed.
+ * @param parseInfo The parse info.
+ * @param reason The issue reason.
+ * @param issues The issues if any.
+ *
+ * @returns The output value.
+ */
+declare function pipeResult<TValue>(input: TValue, pipe: Pipe<TValue> | undefined, parseInfo: ParseInfo | undefined, reason: IssueReason, issues?: Issues): SchemaResult<TValue>;
+
+/**
+ * Executes the async validation and transformation pipe.
+ *
+ * @param input The input value.
+ * @param pipe The pipe to be executed.
+ * @param parseInfo The parse info.
+ * @param reason The issue reason.
+ * @param issues The issues if any.
+ *
+ * @returns The output value.
+ */
+declare function pipeResultAsync<TValue>(input: TValue, pipe: PipeAsync<TValue> | undefined, parseInfo: ParseInfo | undefined, reason: IssueReason, issues?: Issues): Promise<SchemaResult<TValue>>;
+
+/**
+ * Returns the schema result object with issues.
+ *
+ * @param info The parse info.
+ * @param reason The issue reason.
+ * @param validation The validation name.
+ * @param message The error message.
+ * @param input The input value.
+ * @param path The issue path.
+ * @param issues The sub issues.
+ *
+ * @returns The schema result object.
+ */
+declare function schemaIssue(info: ParseInfo | undefined, reason: IssueReason, validation: string, message: ErrorMessage, input: unknown, path?: PathItem[], issues?: Issues): UntypedSchemaResult;
+
+/**
+ * Bic validation type.
+ */
+type BicValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'bic';
+    /**
+     * The BIC regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a [BIC](https://en.wikipedia.org/wiki/Universally_unique_identifier).
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function bic<TInput extends string>(message?: ErrorMessage): BicValidation<TInput>;
+
+/**
+ * Bytes validation type.
+ */
+type BytesValidation<TInput extends string, TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'bytes';
+    /**
+     * The byte length.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the byte length of a
+ * string.
+ *
+ * @param requirement The byte length.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function bytes<TInput extends string, TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): BytesValidation<TInput, TRequirement>;
+
+/**
+ * Credit card validation type.
+ */
+type CreditCardValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'credit_card';
+    /**
+     * The validation function.
+     */
+    requirement: (input: string) => boolean;
+};
+/**
+ * Creates a pipeline validation action that validates a [credit card](https://en.wikipedia.org/wiki/Payment_card_number).
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function creditCard<TInput extends string>(message?: ErrorMessage): CreditCardValidation<TInput>;
+
+/**
+ * Cuid2 validation type.
+ */
+type Cuid2Validation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'cuid2';
+    /**
+     * The Cuid2 regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a [Cuid2](https://github.com/paralleldrive/cuid2).
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function cuid2<TInput extends string>(message?: ErrorMessage): Cuid2Validation<TInput>;
+
+/**
+ * Custom validation type.
+ */
+type CustomValidation<TInput> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'custom';
+    /**
+     * The validation function.
+     */
+    requirement: (input: TInput) => boolean;
+};
+/**
+ * Creates a custom pipeline validation action.
+ *
+ * @param requirement The validation function.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function custom<TInput>(requirement: (input: TInput) => boolean, message?: ErrorMessage): CustomValidation<TInput>;
+
+/**
+ * Custom validation async type.
+ */
+type CustomValidationAsync<TInput> = BaseValidationAsync<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'custom';
+    /**
+     * The validation function.
+     */
+    requirement: (input: TInput) => Promise<boolean>;
+};
+/**
+ * Creates a async custom validation function.
+ *
+ * @param requirement The async validation function.
+ * @param message The error message.
+ *
+ * @returns A async validation function.
+ */
+declare function customAsync<TInput>(requirement: (input: TInput) => Promise<boolean>, message?: ErrorMessage): CustomValidationAsync<TInput>;
+
+/**
+ * Decimal validation type.
+ */
+type DecimalValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'decimal';
+    /**
+     * The decimal regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a decimal string.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function decimal<TInput extends string>(message?: ErrorMessage): DecimalValidation<TInput>;
+
+/**
+ * Email validation type.
+ */
+type EmailValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'email';
+    /**
+     * The email regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates an email.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function email<TInput extends string>(message?: ErrorMessage): EmailValidation<TInput>;
+
+/**
+ * Emoji validation type.
+ */
+type EmojiValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'emoji';
+    /**
+     * The emoji regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates an emoji.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function emoji<TInput extends string>(message?: ErrorMessage): EmojiValidation<TInput>;
+
+/**
+ * Ends with validation type.
+ */
+type EndsWithValidation<TInput extends string, TRequirement extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'ends_with';
+    /**
+     * The end string.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the end of a string.
+ *
+ * @param requirement The end string.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function endsWith<TInput extends string, TRequirement extends string>(requirement: TRequirement, message?: ErrorMessage): EndsWithValidation<TInput, TRequirement>;
+
+/**
+ * Equal validation type.
+ */
+type EqualValidation<TInput extends string | number | bigint | boolean, TRequirement extends TInput> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'equal';
+    /**
+     * The required value.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that checks the value for equality.
+ *
+ * @deprecated Function has been renamed to `value`.
+ *
+ * @param requirement The required value.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function equal<TInput extends string | number | bigint | boolean, TRequirement extends TInput>(requirement: TRequirement, message?: ErrorMessage): EqualValidation<TInput, TRequirement>;
+
+/**
+ * Excludes validation type.
+ */
+type ExcludesValidation<TInput extends string | any[], TRequirement extends TInput extends any[] ? TInput[number] : TInput> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'excludes';
+    /**
+     * The required value.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the content of a string
+ * or array.
+ *
+ * @param requirement The content to be excluded.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function excludes<TInput extends string | any[], const TRequirement extends TInput extends any[] ? TInput[number] : TInput>(requirement: TRequirement, message?: ErrorMessage): ExcludesValidation<TInput, TRequirement>;
+
+/**
+ * Finite validation type.
+ */
+type FiniteValidation<TInput extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'finite';
+    /**
+     * The validation function.
+     */
+    requirement: (input: TInput) => boolean;
+};
+/**
+ * Creates a pipeline validation action that validates whether a number is finite.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function finite<TInput extends number>(message?: ErrorMessage): FiniteValidation<TInput>;
+
+/**
+ * Hexadecimal validation type.
+ */
+type HexadecimalValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'hexadecimal';
+    /**
+     * The hexadecimal regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a hexadecimal string.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function hexadecimal<TInput extends string>(message?: ErrorMessage): HexadecimalValidation<TInput>;
+
+/**
+ * Hex color validation type.
+ */
+type HexColorValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'hex_color';
+    /**
+     * The hex color regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates hex color string.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function hexColor<TInput extends string>(message?: ErrorMessage): HexColorValidation<TInput>;
+
+/**
+ * IMEI validation type.
+ */
+type ImeiValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'imei';
+    /**
+     * The IMEI regex and luhn algorithm.
+     */
+    requirement: [RegExp, typeof isLuhnAlgo];
+};
+/**
+ * Creates a pipeline validation action that validates an [IMEI](https://en.wikipedia.org/wiki/International_Mobile_Equipment_Identity).
+ *
+ * Format: AA-BBBBBB-CCCCCC-D
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function imei<TInput extends string>(message?: ErrorMessage): ImeiValidation<TInput>;
+
+/**
+ * Includes validation type.
+ */
+type IncludesValidation<TInput extends string | any[], TRequirement extends TInput extends any[] ? TInput[number] : TInput> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'includes';
+    /**
+     * The required value.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the content of a string
+ * or array.
+ *
+ * @param requirement The content to be included.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function includes<TInput extends string | any[], const TRequirement extends TInput extends any[] ? TInput[number] : TInput>(requirement: TRequirement, message?: ErrorMessage): IncludesValidation<TInput, TRequirement>;
+
+/**
+ * Integer validation type.
+ */
+type IntegerValidation<TInput extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'integer';
+    /**
+     * The validation function.
+     */
+    requirement: (input: TInput) => boolean;
+};
+/**
+ * Creates a pipeline validation action that validates whether a number is an
+ * integer.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function integer<TInput extends number>(message?: ErrorMessage): IntegerValidation<TInput>;
+
+/**
+ * IP validation type.
+ */
+type IpValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'ip';
+    /**
+     * The IPv4 and IPv6 regex.
+     */
+    requirement: [RegExp, RegExp];
+};
+/**
+ * Creates a pipeline validation action that validates an [IPv4](https://en.wikipedia.org/wiki/IPv4)
+ * or [IPv6](https://en.wikipedia.org/wiki/IPv6) address.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function ip<TInput extends string>(message?: ErrorMessage): IpValidation<TInput>;
+
+/**
+ * IPv4 validation type.
+ */
+type Ipv4Validation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'ipv4';
+    /**
+     * The IPv4 regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates an [IPv4](https://en.wikipedia.org/wiki/IPv4) address.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function ipv4<TInput extends string>(message?: ErrorMessage): Ipv4Validation<TInput>;
+
+/**
+ * IPv6 validation type.
+ */
+type Ipv6Validation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'ipv6';
+    /**
+     * The IPv6 regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates an [IPv6](https://en.wikipedia.org/wiki/IPv6) address.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function ipv6<TInput extends string>(message?: ErrorMessage): Ipv6Validation<TInput>;
+
+/**
+ * ISO date validation type.
+ */
+type IsoDateValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'iso_date';
+    /**
+     * The ISO date regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a date.
+ *
+ * Format: yyyy-mm-dd
+ *
+ * Hint: The regex used cannot validate the maximum number of days based on
+ * year and month. For example, "2023-06-31" is valid although June has only
+ * 30 days.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function isoDate<TInput extends string>(message?: ErrorMessage): IsoDateValidation<TInput>;
+
+/**
+ * ISO date time validation type.
+ */
+type IsoDateTimeValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'iso_date_time';
+    /**
+     * The ISO date time regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a datetime.
+ *
+ * Format: yyyy-mm-ddThh:mm
+ *
+ * Hint: The regex used cannot validate the maximum number of days based on
+ * year and month. For example, "2023-06-31T00:00" is valid although June has only
+ * 30 days.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function isoDateTime<TInput extends string>(message?: ErrorMessage): IsoDateTimeValidation<TInput>;
+
+/**
+ * ISO time validation type.
+ */
+type IsoTimeValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'iso_time';
+    /**
+     * The ISO time regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a time.
+ *
+ * Format: hh:mm
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function isoTime<TInput extends string>(message?: ErrorMessage): IsoTimeValidation<TInput>;
+
+/**
+ * ISO time second validation type.
+ */
+type IsoTimeSecondValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'iso_time_second';
+    /**
+     * The ISO time second regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a time with seconds.
+ *
+ * Format: hh:mm:ss
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function isoTimeSecond<TInput extends string>(message?: ErrorMessage): IsoTimeSecondValidation<TInput>;
+
+/**
+ * ISO timestamp validation type.
+ */
+type IsoTimestampValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'iso_timestamp';
+    /**
+     * The ISO timestamp regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a timestamp.
+ *
+ * Format: yyyy-mm-ddThh:mm:ss.sssZ
+ *
+ * Hint: The regex used cannot validate the maximum number of days based on
+ * year and month. For example, "2023-06-31T00:00:00.000Z" is valid although
+ * June has only 30 days.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function isoTimestamp<TInput extends string>(message?: ErrorMessage): IsoTimestampValidation<TInput>;
+
+/**
+ * ISO week validation type.
+ */
+type IsoWeekValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'iso_week';
+    /**
+     * The ISO week regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a week.
+ *
+ * Format: yyyy-Www
+ *
+ * Hint: The regex used cannot validate the maximum number of weeks based on
+ * the year. For example, "2021W53" is valid even though the year 2021 has only
+ * 52 weeks.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function isoWeek<TInput extends string>(message?: ErrorMessage): IsoWeekValidation<TInput>;
+
+/**
+ * Length validation type.
+ */
+type LengthValidation<TInput extends string | any[], TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'length';
+    /**
+     * The length.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the length of a string
+ * or array.
+ *
+ * @param requirement The length.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function length<TInput extends string | any[], TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): LengthValidation<TInput, TRequirement>;
+
+/**
+ * MAC validation type.
+ */
+type MacValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'mac';
+    /**
+     * The MAC 48 and 64 bit regex.
+     */
+    requirement: [RegExp, RegExp];
+};
+/**
+ * Creates a pipeline validation action that validates a [MAC](https://en.wikipedia.org/wiki/MAC_address).
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function mac<TInput extends string>(message?: ErrorMessage): MacValidation<TInput>;
+
+/**
+ * MAC validation type.
+ */
+type Mac48Validation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'mac48';
+    /**
+     * The 48 bit MAC regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a 48 bit [MAC](https://en.wikipedia.org/wiki/MAC_address).
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function mac48<TInput extends string>(message?: ErrorMessage): Mac48Validation<TInput>;
+
+/**
+ * MAC validation type.
+ */
+type Mac64Validation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'mac64';
+    /**
+     * The 64 bit MAC regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a 64 bit [MAC](https://en.wikipedia.org/wiki/MAC_address).
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function mac64<TInput extends string>(message?: ErrorMessage): Mac64Validation<TInput>;
+
+/**
+ * Max bytes validation type.
+ */
+type MaxBytesValidation<TInput extends string, TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'max_bytes';
+    /**
+     * The maximum byte length.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the byte length of a
+ * string.
+ *
+ * @param requirement The maximum byte length.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function maxBytes<TInput extends string, TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): MaxBytesValidation<TInput, TRequirement>;
+
+/**
+ * Max length validation type.
+ */
+type MaxLengthValidation<TInput extends string | any[], TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'max_length';
+    /**
+     * The maximum length.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the length of a string
+ * or array.
+ *
+ * @param requirement The maximum length.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function maxLength<TInput extends string | any[], TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): MaxLengthValidation<TInput, TRequirement>;
+
+/**
+ * Max size validation type.
+ */
+type MaxSizeValidation<TInput extends Map<any, any> | Set<any> | Blob, TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'max_size';
+    /**
+     * The maximum size.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the size of a map, set
+ * or blob.
+ *
+ * @param requirement The maximum size.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function maxSize<TInput extends Map<any, any> | Set<any> | Blob, TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): MaxSizeValidation<TInput, TRequirement>;
+
+/**
+ * Max value validation type.
+ */
+type MaxValueValidation<TInput extends string | number | bigint | boolean | Date, TRequirement extends TInput> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'max_value';
+    /**
+     * The maximum value.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the value of a string,
+ * number or date.
+ *
+ * @param requirement The maximum value.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function maxValue<TInput extends string | number | bigint | boolean | Date, TRequirement extends TInput>(requirement: TRequirement, message?: ErrorMessage): MaxValueValidation<TInput, TRequirement>;
+/**
+ * See {@link maxValue}
+ *
+ * @deprecated Function has been renamed to `maxValue`.
+ */
+declare const maxRange: typeof maxValue;
+
+/**
+ * Min bytes validation type.
+ */
+type MinBytesValidation<TInput extends string, TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'min_bytes';
+    /**
+     * The minimum byte length.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the byte length of a
+ * string.
+ *
+ * @param requirement The minimum length in byte.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function minBytes<TInput extends string, TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): MinBytesValidation<TInput, TRequirement>;
+
+/**
+ * MIME type validation type.
+ */
+type MimeTypeValidation<TInput extends Blob, TRequirement extends `${string}/${string}`[]> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'mime_type';
+    /**
+     * The MIME types.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the MIME type of a file.
+ *
+ * @param requirement The MIME types.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function mimeType<TInput extends Blob, TRequirement extends `${string}/${string}`[]>(requirement: TRequirement, message?: ErrorMessage): MimeTypeValidation<TInput, TRequirement>;
+
+/**
+ * Min length validation type.
+ */
+type MinLengthValidation<TInput extends string | any[], TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'min_length';
+    /**
+     * The minimum length.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the length of a string
+ * or array.
+ *
+ * @param requirement The minimum length.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function minLength<TInput extends string | any[], TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): MinLengthValidation<TInput, TRequirement>;
+
+/**
+ * Min size validation type.
+ */
+type MinSizeValidation<TInput extends Map<any, any> | Set<any> | Blob, TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'min_size';
+    /**
+     * The minimum size.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the size of a map, set
+ * or blob.
+ *
+ * @param requirement The minimum size.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function minSize<TInput extends Map<any, any> | Set<any> | Blob, TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): MinSizeValidation<TInput, TRequirement>;
+
+/**
+ * Min value validation type.
+ */
+type MinValueValidation<TInput extends string | number | bigint | boolean | Date, TRequirement extends TInput> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'min_value';
+    /**
+     * The minimum value.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the value of a string,
+ * number or date.
+ *
+ * @param requirement The minimum value.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function minValue<TInput extends string | number | bigint | boolean | Date, TRequirement extends TInput>(requirement: TRequirement, message?: ErrorMessage): MinValueValidation<TInput, TRequirement>;
+/**
+ * See {@link minValue}
+ *
+ * @deprecated Function has been renamed to `minValue`.
+ */
+declare const minRange: typeof minValue;
+
+/**
+ * Multiple of validation type.
+ */
+type MultipleOfValidation<TInput extends number, TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'multiple_of';
+    /**
+     * The divisor.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates whether a number is a
+ * multiple.
+ *
+ * @param requirement The divisor.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function multipleOf<TInput extends number, TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): MultipleOfValidation<TInput, TRequirement>;
+
+/**
+ * Not bytes validation type.
+ */
+type NotBytesValidation<TInput extends string, TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'not_bytes';
+    /**
+     * The byte length.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the byte length of a
+ * string.
+ *
+ * @param requirement The byte length.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function notBytes<TInput extends string, TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): NotBytesValidation<TInput, TRequirement>;
+
+/**
+ * Not length validation type.
+ */
+type NotLengthValidation<TInput extends string | any[], TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'not_length';
+    /**
+     * The length.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the length of a string
+ * or array.
+ *
+ * @param requirement The length.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function notLength<TInput extends string | any[], TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): NotLengthValidation<TInput, TRequirement>;
+
+/**
+ * Not size validation type.
+ */
+type NotSizeValidation<TInput extends Map<any, any> | Set<any> | Blob, TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'not_size';
+    /**
+     * The size.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the size of a map, set
+ * or blob.
+ *
+ * @param requirement The size.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function notSize<TInput extends Map<any, any> | Set<any> | Blob, TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): NotSizeValidation<TInput, TRequirement>;
+
+/**
+ * Not value validation type.
+ */
+type NotValueValidation<TInput extends string | number | bigint | boolean | Date, TRequirement extends TInput> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'not_value';
+    /**
+     * The value.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the value of a string
+ * or number.
+ *
+ * @param requirement The value.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function notValue<TInput extends string | number | bigint | boolean | Date, TRequirement extends TInput>(requirement: TRequirement, message?: ErrorMessage): NotValueValidation<TInput, TRequirement>;
+
+/**
+ * Octal validation type.
+ */
+type OctalValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'octal';
+    /**
+     * The octal regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates an [octal](https://en.wikipedia.org/wiki/Octal) string.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function octal<TInput extends string>(message?: ErrorMessage): OctalValidation<TInput>;
+
+/**
+ * Regex validation type.
+ */
+type RegexValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'regex';
+    /**
+     * The regex pattern.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a string with a regex.
+ *
+ * @param requirement The regex pattern.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function regex<TInput extends string>(requirement: RegExp, message?: ErrorMessage): RegexValidation<TInput>;
+
+/**
+ * Safe integer validation type.
+ */
+type SafeIntegerValidation<TInput extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'safe_integer';
+    /**
+     * The validation function.
+     */
+    requirement: (input: TInput) => boolean;
+};
+/**
+ * Creates a pipeline validation action that validates whether a number is a
+ * safe integer.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function safeInteger<TInput extends number>(message?: ErrorMessage): SafeIntegerValidation<TInput>;
+
+/**
+ * Size validation type.
+ */
+type SizeValidation<TInput extends Map<any, any> | Set<any> | Blob, TRequirement extends number> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'size';
+    /**
+     * The size.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the size of a map, set
+ * or blob.
+ *
+ * @param requirement The size.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function size<TInput extends Map<any, any> | Set<any> | Blob, TRequirement extends number>(requirement: TRequirement, message?: ErrorMessage): SizeValidation<TInput, TRequirement>;
+
+/**
+ * Starts with validation type.
+ */
+type StartsWithValidation<TInput extends string, TRequirement extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'stars_with';
+    /**
+     * The start string.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the start of a string.
+ *
+ * @param requirement The start string.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function startsWith<TInput extends string, TRequirement extends string>(requirement: TRequirement, message?: ErrorMessage): StartsWithValidation<TInput, TRequirement>;
+
+/**
+ * ULID validation type.
+ */
+type UlidValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'ulid';
+    /**
+     * The ULID regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a [ULID](https://github.com/ulid/spec).
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function ulid<TInput extends string>(message?: ErrorMessage): UlidValidation<TInput>;
+
+/**
+ * URL validation type.
+ */
+type UrlValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'url';
+    /**
+     * The validation function.
+     */
+    requirement: (input: TInput) => boolean;
+};
+/**
+ * Creates a pipeline validation action that validates a URL.
+ *
+ * Hint: The value is passed to the URL constructor to check if it is valid.
+ * This check is not perfect. For example, values like "abc:1234" are accepted.
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function url<TInput extends string>(message?: ErrorMessage): UrlValidation<TInput>;
+
+/**
+ * UUID validation type.
+ */
+type UuidValidation<TInput extends string> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'uuid';
+    /**
+     * The UUID regex.
+     */
+    requirement: RegExp;
+};
+/**
+ * Creates a pipeline validation action that validates a [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier).
+ *
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function uuid<TInput extends string>(message?: ErrorMessage): UuidValidation<TInput>;
+
+/**
+ * Value validation type.
+ */
+type ValueValidation<TInput extends string | number | bigint | boolean | Date, TRequirement extends TInput> = BaseValidation<TInput> & {
+    /**
+     * The validation type.
+     */
+    type: 'value';
+    /**
+     * The value.
+     */
+    requirement: TRequirement;
+};
+/**
+ * Creates a pipeline validation action that validates the value of a string
+ * or number.
+ *
+ * @param requirement The value.
+ * @param message The error message.
+ *
+ * @returns A validation action.
+ */
+declare function value<TInput extends string | number | bigint | boolean | Date, TRequirement extends TInput>(requirement: TRequirement, message?: ErrorMessage): ValueValidation<TInput, TRequirement>;
+
+export { AnySchema, AnySchemaAsync, ArrayPathItem, ArraySchema, ArraySchemaAsync, BIC_REGEX, BaseSchema, BaseSchemaAsync, BaseTransformation, BaseTransformationAsync, BaseValidation, BaseValidationAsync, BicValidation, BigintSchema, BigintSchemaAsync, BlobSchema, BlobSchemaAsync, BooleanSchema, BooleanSchemaAsync, Brand, BrandName, BrandSymbol, BytesValidation, CUID2_REGEX, Class, CreditCardValidation, Cuid2Validation, CustomValidation, CustomValidationAsync, DECIMAL_REGEX, DateSchema, DateSchemaAsync, DecimalValidation, DefaultValue, DefaultValues, EMAIL_REGEX, EMOJI_REGEX, EmailValidation, EmojiValidation, EndsWithValidation, Enum, EnumSchema, EnumSchemaAsync, EqualValidation, ErrorMessage, ExcludesValidation, FallbackInfo, FallbackValue, FallbackValues, FiniteValidation, FlatErrors, HEXADECIMAL_REGEX, HEX_COLOR_REGEX, HexColorValidation, HexadecimalValidation, IMEI_REGEX, IPV4_REGEX, IPV6_REGEX, ISO_DATE_REGEX, ISO_DATE_TIME_REGEX, ISO_TIMESTAMP_REGEX, ISO_TIME_REGEX, ISO_TIME_SECOND_REGEX, ISO_WEEK_REGEX, ImeiValidation, IncludesValidation, Input, InstanceSchema, InstanceSchemaAsync, IntegerValidation, IntersectOptions, IntersectSchema, InvalidActionResult, IpValidation, Ipv4Validation, Ipv6Validation, IsoDateTimeValidation, IsoDateValidation, IsoTimeSecondValidation, IsoTimeValidation, IsoTimestampValidation, IsoWeekValidation, Issue, IssueOrigin, IssueReason, Issues, LengthValidation, Literal, LiteralSchema, LiteralSchemaAsync, MAC48_REGEX, MAC64_REGEX, Mac48Validation, Mac64Validation, MacValidation, MapInput, MapOutput, MapPathItem, MapSchema, MapSchemaAsync, MaxBytesValidation, MaxLengthValidation, MaxSizeValidation, MaxValueValidation, MaybeReadonly, MimeTypeValidation, MinBytesValidation, MinLengthValidation, MinSizeValidation, MinValueValidation, MultipleOfValidation, NanSchema, NanSchemaAsync, NeverSchema, NeverSchemaAsync, NonNullable$1 as NonNullable, NonNullableSchema, NonNullableSchemaAsync, NonNullish, NonNullishSchema, NonNullishSchemaAsync, NonOptional, NonOptionalSchema, NonOptionalSchemaAsync, NotBytesValidation, NotLengthValidation, NotSizeValidation, NotValueValidation, NullSchema, NullSchemaAsync, NullableSchema, NullableSchemaAsync, NullishSchema, NullishSchemaAsync, NumberSchema, NumberSchemaAsync, OCTAL_REGEX, ObjectEntries, ObjectEntriesAsync, ObjectInput, ObjectOutput, ObjectPathItem, ObjectSchema, ObjectSchemaAsync, OctalValidation, OptionalSchema, OptionalSchemaAsync, Output, ParseInfo, PartialObjectEntries, PartialObjectEntriesAsync, PathItem, PicklistOptions, PicklistSchema, PicklistSchemaAsync, Pipe, PipeActionResult, PipeAsync, PipeInfo, RecordInput, RecordKey, RecordKeyAsync, RecordOutput, RecordPathItem, RecordSchema, RecordSchemaAsync, RecursiveSchema, RecursiveSchemaAsync, RegexValidation, ResolveObject, SafeIntegerValidation, SafeParseResult, SchemaResult, SchemaWithBrand, SchemaWithFallback, SchemaWithFallbackAsync, SchemaWithMaybeDefault, SchemaWithMaybeDefaultAsync, SchemaWithMaybeFallback, SchemaWithMaybeFallbackAsync, SchemaWithTransform, SchemaWithTransformAsync, SetInput, SetOutput, SetPathItem, SetSchema, SetSchemaAsync, SizeValidation, SpecialSchema, SpecialSchemaAsync, StartsWithValidation, StringSchema, StringSchemaAsync, SymbolSchema, SymbolSchemaAsync, ToCustomTransformation, ToCustomTransformationAsync, ToLowerCaseTransformation, ToMaxValueTransformation, ToMinValueTransformation, ToTrimmedEndTransformation, ToTrimmedStartTransformation, ToTrimmedTransformation, ToUpperCaseTransformation, TupleInput, TupleItems, TupleItemsAsync, TupleOutput, TuplePathItem, TupleSchema, TupleSchemaAsync, TypedSchemaResult, ULID_REGEX, UUID_REGEX, UlidValidation, UndefinedSchema, UndefinedSchemaAsync, UnionOptions, UnionOptionsAsync, UnionSchema, UnionSchemaAsync, UnknownPathItem, UnknownSchema, UnknownSchemaAsync, UntypedSchemaResult, UrlValidation, UuidValidation, ValiError, ValidActionResult, ValueValidation, VariantOption, VariantOptionAsync, VariantOptions, VariantOptionsAsync, VariantSchema, VariantSchemaAsync, VoidSchema, VoidSchemaAsync, actionIssue, actionOutput, any, anyAsync, array, arrayAsync, bic, bigint, bigintAsync, blob, blobAsync, boolean, booleanAsync, brand, bytes, coerce, coerceAsync, creditCard, cuid2, custom, customAsync, date, dateAsync, decimal, defaultArgs, discriminatedUnion, discriminatedUnionAsync, email, emoji, endsWith, enumAsync, enumType, enumTypeAsync, enum_, equal, excludes, fallback, fallbackAsync, finite, flatten, forward, getDefault, getDefaultAsync, getDefaults, getDefaultsAsync, getFallback, getFallbackAsync, getFallbacks, getFallbacksAsync, hexColor, hexadecimal, imei, includes, instance, instanceAsync, integer, intersect, intersection, ip, ipv4, ipv6, is, isLuhnAlgo, isoDate, isoDateTime, isoTime, isoTimeSecond, isoTimestamp, isoWeek, keyof, length, literal, literalAsync, mac, mac48, mac64, map, mapAsync, maxBytes, maxLength, maxRange, maxSize, maxValue, merge, mergeAsync, mimeType, minBytes, minLength, minRange, minSize, minValue, multipleOf, nan, nanAsync, nativeEnum, nativeEnumAsync, never, neverAsync, nonNullable, nonNullableAsync, nonNullish, nonNullishAsync, nonOptional, nonOptionalAsync, notBytes, notLength, notSize, notValue, nullAsync, nullType, nullTypeAsync, null_, nullable, nullableAsync, nullish, nullishAsync, number, numberAsync, object, objectAsync, octal, omit, omitAsync, optional, optionalAsync, parse, parseAsync, parseResult, partial, partialAsync, passthrough, passthroughAsync, pick, pickAsync, picklist, picklistAsync, pipeResult, pipeResultAsync, record, recordAsync, recursive, recursiveAsync, regex, required, requiredAsync, restAndDefaultArgs, safeInteger, safeParse, safeParseAsync, schemaIssue, set, setAsync, size, special, specialAsync, startsWith, strict, strictAsync, string, stringAsync, strip, stripAsync, symbol, symbolAsync, toCustom, toCustomAsync, toLowerCase, toMaxValue, toMinValue, toTrimmed, toTrimmedEnd, toTrimmedStart, toUpperCase, transform, transformAsync, tuple, tupleAsync, ulid, undefinedAsync, undefinedType, undefinedTypeAsync, undefined_, union, unionAsync, unknown, unknownAsync, unwrap, url, useDefault, uuid, value, variant, variantAsync, voidAsync, voidType, voidTypeAsync, void_, withDefault };

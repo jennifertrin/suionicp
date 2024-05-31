@@ -1,0 +1,1 @@
+{"canister_methods":{"queries":[],"updates":[{"name":"suiAddress"},{"name":"sign"}],"callbacks":{}},"env_vars":[]}

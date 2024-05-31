@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/hex.ts"],
+  "sourcesContent": ["// Copyright (c) Mysten Labs, Inc.\n// SPDX-License-Identifier: Apache-2.0\n\nexport function fromHEX(hexStr: string): Uint8Array {\n\tconst normalized = hexStr.startsWith('0x') ? hexStr.slice(2) : hexStr;\n\tconst padded = normalized.length % 2 === 0 ? normalized : `0${normalized}}`;\n\tconst intArr = padded.match(/.{2}/g)?.map((byte) => parseInt(byte, 16)) ?? [];\n\n\treturn Uint8Array.from(intArr);\n}\n\nexport function toHEX(bytes: Uint8Array): string {\n\treturn bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');\n}\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAGO,SAAS,QAAQ,QAA4B;AACnD,QAAM,aAAa,OAAO,WAAW,IAAI,IAAI,OAAO,MAAM,CAAC,IAAI;AAC/D,QAAM,SAAS,WAAW,SAAS,MAAM,IAAI,aAAa,IAAI;AAC9D,QAAM,SAAS,OAAO,MAAM,OAAO,GAAG,IAAI,CAAC,SAAS,SAAS,MAAM,EAAE,CAAC,KAAK,CAAC;AAE5E,SAAO,WAAW,KAAK,MAAM;AAC9B;AAEO,SAAS,MAAM,OAA2B;AAChD,SAAO,MAAM,OAAO,CAAC,KAAK,SAAS,MAAM,KAAK,SAAS,EAAE,EAAE,SAAS,GAAG,GAAG,GAAG,EAAE;AAChF;",
+  "names": []
+}

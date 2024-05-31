@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/b58.ts"],
+  "sourcesContent": ["// Copyright (c) Mysten Labs, Inc.\n// SPDX-License-Identifier: Apache-2.0\n\nimport bs58 from 'bs58';\n\nexport const toB58 = (buffer: Uint8Array) => bs58.encode(buffer);\nexport const fromB58 = (str: string) => bs58.decode(str);\n"],
+  "mappings": "AAGA,OAAO,UAAU;AAEV,MAAM,QAAQ,CAAC,WAAuB,KAAK,OAAO,MAAM;AACxD,MAAM,UAAU,CAAC,QAAgB,KAAK,OAAO,GAAG;",
+  "names": []
+}
