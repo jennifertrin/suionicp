@@ -2,7 +2,7 @@
 
 This demo provides an example of how to generate a [Sui](https://sui.io/) address controlled by an [ICP](https://internetcomputer.org/) canister smart contract.
 
-ICP canister smart contracts can create and manage a wallet address on any blockchain that uses the ECDSA signature scheme including Ethereum, EVM, and Sui. This feature named [threshold ECDSA](https://internetcomputer.org/docs/current/references/t-ecdsa-how-it-works) enables various cross-chain use cases. 
+ICP canister smart contracts can create and manage wallet addresses on any blockchain that uses the ECDSA signature scheme including Ethereum, EVM, and Sui. This feature named [threshold ECDSA](https://internetcomputer.org/docs/current/references/t-ecdsa-how-it-works) enables various cross-chain use cases. 
 
 ## Use cases
 
